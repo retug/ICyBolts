@@ -7,14 +7,6 @@ export type BoltSizeOption = {
   renderSize: BoltRenderSize;
 };
 
-export type AppliedLoad = {
-  id: string;
-  label: string;
-  x: number;
-  y: number;
-  magnitude: number;
-  angleDeg: number;
-};
 
 // Imperial dimensions in inches.
 // Head sizes are approximate for now.

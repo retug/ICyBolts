@@ -10,6 +10,7 @@ import { FilePanel } from "./components/FilePanel";
 import { BottomDock } from "./components/BottomDock";
 import { AppliedLoadArrow } from "./components/AppliedLoadArrow";
 import { BoltSelectionBox } from "./components/BoltSelectionBox";
+import { LoadSelectionBox } from "./components/LoadSelectionBox";
 
 import { analyzeBoltGroup } from "./analysis/analyzeBoltGroup";
 
@@ -31,8 +32,13 @@ function CustomBoltPreviewDot({ x, y }: { x: number; y: number }) {
 
 function App() {
   const [activeTab, setActiveTab] = useState<ActiveDockTab>("file");
+
   const [selectedBoltIds, setSelectedBoltIds] = useState<string[]>([]);
   const [hoveredBoltIds, setHoveredBoltIds] = useState<string[]>([]);
+
+  const [selectedLoadIds, setSelectedLoadIds] = useState<string[]>([]);
+  const [hoveredLoadIds, setHoveredLoadIds] = useState<string[]>([]);
+
   const [isCtrlSelecting, setIsCtrlSelecting] = useState(false);
 
   const [customBoltX, setCustomBoltX] = useState("0");
@@ -53,8 +59,12 @@ function App() {
       label: "P1",
       x: 0,
       y: -6,
+      inputMode: "magnitude-angle",
       magnitude: 20,
       angleDeg: 90,
+      fx: 0,
+      fy: 20,
+      moment: 0,
     },
   ]);
 
@@ -126,6 +136,22 @@ function App() {
       if (event.key === "Control") {
         setIsCtrlSelecting(true);
       }
+
+      if (event.key === "Delete" && activeTab === "bolts") {
+        setBolts((prev) =>
+          prev.filter((bolt) => !selectedBoltIds.includes(bolt.id))
+        );
+        setSelectedBoltIds([]);
+        setHoveredBoltIds([]);
+      }
+
+      if (event.key === "Delete" && activeTab === "loads") {
+        setLoads((prev) =>
+          prev.filter((load) => !selectedLoadIds.includes(load.id))
+        );
+        setSelectedLoadIds([]);
+        setHoveredLoadIds([]);
+      }
     }
 
     function onKeyUp(event: KeyboardEvent) {
@@ -141,7 +167,19 @@ function App() {
       window.removeEventListener("keydown", onKeyDown);
       window.removeEventListener("keyup", onKeyUp);
     };
-  }, []);
+  }, [activeTab, selectedBoltIds, selectedLoadIds]);
+
+  useEffect(() => {
+    if (activeTab !== "bolts") {
+      setSelectedBoltIds([]);
+      setHoveredBoltIds([]);
+    }
+
+    if (activeTab !== "loads") {
+      setSelectedLoadIds([]);
+      setHoveredLoadIds([]);
+    }
+  }, [activeTab]);
 
   function runAnalysis() {
     const result = analyzeBoltGroup(bolts, loads);
@@ -170,7 +208,14 @@ function App() {
     }
 
     if (activeTab === "loads") {
-      return <LoadPanel loads={loads} setLoads={setLoads} />;
+      return (
+        <LoadPanel
+          loads={loads}
+          setLoads={setLoads}
+          selectedLoadIds={selectedLoadIds}
+          unitSystem={settings.unitSystem}
+        />
+      );
     }
 
     return (
@@ -208,7 +253,7 @@ function App() {
       </aside>
 
       <main style={{ flex: 1, position: "relative" }}>
-        {isCtrlSelecting && (
+        {isCtrlSelecting && (activeTab === "bolts" || activeTab === "loads") && (
           <div
             style={{
               position: "absolute",
@@ -260,12 +305,22 @@ function App() {
         >
           <color attach="background" args={[isDark ? "#020617" : "#f8fafc"]} />
 
-          <BoltSelectionBox
-            selectedBoltIds={selectedBoltIds}
-            setSelectedBoltIds={setSelectedBoltIds}
-            setHoveredBoltIds={setHoveredBoltIds}
-            setIsCtrlSelecting={setIsCtrlSelecting}
-          />
+          {activeTab === "bolts" && (
+            <BoltSelectionBox
+              selectedBoltIds={selectedBoltIds}
+              setSelectedBoltIds={setSelectedBoltIds}
+              setHoveredBoltIds={setHoveredBoltIds}
+              setIsCtrlSelecting={setIsCtrlSelecting}
+            />
+          )}
+
+          {activeTab === "loads" && (
+            <LoadSelectionBox
+              setSelectedLoadIds={setSelectedLoadIds}
+              setHoveredLoadIds={setHoveredLoadIds}
+              setIsCtrlSelecting={setIsCtrlSelecting}
+            />
+          )}
 
           <ambientLight intensity={0.7} />
           <directionalLight position={[10, -10, 10]} intensity={1.2} />
@@ -279,13 +334,22 @@ function App() {
             position={[0, 0, -0.05]}
           />
 
-          <CustomBoltPreviewDot
-            x={Number(customBoltX) || 0}
-            y={Number(customBoltY) || 0}
-          />
+          {activeTab === "bolts" && (
+            <CustomBoltPreviewDot
+              x={Number(customBoltX) || 0}
+              y={Number(customBoltY) || 0}
+            />
+          )}
 
           {loads.map((load) => (
-            <AppliedLoadArrow key={load.id} load={load} />
+            <AppliedLoadArrow
+              key={load.id}
+              load={{
+                ...load,
+                isSelected: selectedLoadIds.includes(load.id),
+                isHovered: hoveredLoadIds.includes(load.id),
+              }}
+            />
           ))}
 
           {bolts.map((bolt) => (

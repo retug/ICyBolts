@@ -1,5 +1,3 @@
-import * as THREE from "three";
-
 export type UnitSystem = "imperial" | "metric";
 
 export type BoltForceVector = {
@@ -9,13 +7,27 @@ export type BoltForceVector = {
   magnitude?: number;
 };
 
+export type LoadInputMode = "magnitude-angle" | "components";
+
 export type AppliedLoad = {
   id: string;
   label: string;
   x: number;
   y: number;
+
+  inputMode: LoadInputMode;
+
+  // Backend/internal units:
+  // force = kips
+  // moment = kip-in
   magnitude: number;
   angleDeg: number;
+  fx: number;
+  fy: number;
+  moment: number;
+
+  isSelected?: boolean;
+  isHovered?: boolean;
 };
 
 export type BoltRenderSize = {
