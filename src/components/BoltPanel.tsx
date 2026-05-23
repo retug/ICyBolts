@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 import type { BoltData } from "../types/bolts";
 import { boltSizeOptions } from "../data/boltSizes";
@@ -7,17 +7,72 @@ type BoltPanelProps = {
   bolts: BoltData[];
   setBolts: React.Dispatch<React.SetStateAction<BoltData[]>>;
   selectedBoltIds: string[];
+  setSelectedBoltIds: React.Dispatch<React.SetStateAction<string[]>>;
+  customBoltX: number;
+  setCustomBoltX: React.Dispatch<React.SetStateAction<number>>;
+  customBoltY: number;
+  setCustomBoltY: React.Dispatch<React.SetStateAction<number>>;
 };
 
 export function BoltPanel({
   bolts,
   setBolts,
   selectedBoltIds,
+  setSelectedBoltIds,
+  customBoltX,
+  setCustomBoltX,
+  customBoltY,
+  setCustomBoltY,
 }: BoltPanelProps) {
   const [rows, setRows] = useState(2);
   const [cols, setCols] = useState(2);
   const [spacingX, setSpacingX] = useState(4);
   const [spacingY, setSpacingY] = useState(4);
+  const [customX, setCustomX] = useState(0);
+  const [customY, setCustomY] = useState(0);
+
+  useEffect(() => {
+  function onKeyDown(event: KeyboardEvent) {
+    const activeElement =
+      document.activeElement as HTMLElement | null;
+
+    const isTyping =
+      activeElement?.tagName === "INPUT" ||
+      activeElement?.tagName === "TEXTAREA" ||
+      activeElement?.tagName === "SELECT";
+
+    if (isTyping) return;
+
+    if (
+      event.key === "Delete" ||
+      event.key === "Backspace"
+    ) {
+      if (selectedBoltIds.length === 0) return;
+
+      setBolts((prev) =>
+        prev.filter(
+          (bolt) =>
+            !selectedBoltIds.includes(bolt.id)
+        )
+      );
+
+      setSelectedBoltIds([]);
+    }
+  }
+
+  window.addEventListener("keydown", onKeyDown);
+
+  return () => {
+    window.removeEventListener(
+      "keydown",
+      onKeyDown
+    );
+  };
+}, [
+  selectedBoltIds,
+  setBolts,
+  setSelectedBoltIds,
+]);
 
   const selectedBolts = bolts.filter((bolt) =>
     selectedBoltIds.includes(bolt.id)
@@ -102,6 +157,42 @@ export function BoltPanel({
     setBolts(generatedBolts);
   }
 
+  function getCurrentBoltSize() {
+  return (
+    boltSizeOptions.find((b) => b.label === bolts[0]?.label) ??
+    boltSizeOptions.find((b) => b.label === "3/4")!
+  );
+}
+
+function addCustomBolt() {
+  const selectedSize = getCurrentBoltSize();
+
+  setBolts((prev) => [
+    ...prev,
+    {
+      id: crypto.randomUUID(),
+      label: selectedSize.label,
+      x: customBoltX,
+      y: customBoltY,
+      unitSystem: selectedSize.unitSystem,
+      diameter: selectedSize.diameter,
+      renderSize: selectedSize.renderSize,
+      force: {
+        fx: 0,
+        fy: 0,
+      },
+    },
+  ]);
+}
+
+function deleteSelectedBolts() {
+  setBolts((prev) =>
+    prev.filter((bolt) => !selectedBoltIds.includes(bolt.id))
+  );
+
+  setSelectedBoltIds([]);
+}
+
   return (
     <div
       style={{
@@ -166,6 +257,44 @@ export function BoltPanel({
             )}
           </select>
         </label>
+      </section>
+
+      <section style={cardStyle}>
+        <h3 style={sectionTitleStyle}>Custom Bolt</h3>
+
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr",
+            gap: 12,
+          }}
+        >
+          <label style={labelStyle}>
+            <span>X</span>
+            <input
+              style={inputStyle}
+              type="number"
+              step={0.25}
+              value={customBoltX}
+              onChange={(e) => setCustomBoltX(Number(e.target.value))}
+            />
+          </label>
+
+          <label style={labelStyle}>
+            <span>Y</span>
+            <input
+              style={inputStyle}
+              type="number"
+              step={0.25}
+              value={customBoltY}
+              onChange={(e) => setCustomBoltY(Number(e.target.value))}
+            />
+          </label>
+        </div>
+
+        <button style={primaryButtonStyle} onClick={addCustomBolt}>
+          Add Bolt
+        </button>
       </section>
 
       <section style={cardStyle}>
@@ -276,6 +405,18 @@ export function BoltPanel({
         <h3 style={sectionTitleStyle}>
           Selected Bolts
         </h3>
+
+        <button
+  style={{
+    ...primaryButtonStyle,
+    background: selectedBoltIds.length > 0 ? "#dc2626" : "#94a3b8",
+    cursor: selectedBoltIds.length > 0 ? "pointer" : "not-allowed",
+  }}
+  disabled={selectedBoltIds.length === 0}
+  onClick={deleteSelectedBolts}
+>
+  Delete Selected Bolt{selectedBoltIds.length === 1 ? "" : "s"}
+</button>
 
         {selectedBolts.length ===
           0 && (

@@ -16,11 +16,27 @@ import { analyzeBoltGroup } from "./analysis/analyzeBoltGroup";
 import type { AppliedLoad, BoltData } from "./types/bolts";
 import type { ActiveDockTab, AppSettings } from "./types/app";
 
+function CustomBoltPreviewDot({ x, y }: { x: number; y: number }) {
+  return (
+    <mesh position={[x, y, 1.25]}>
+      <sphereGeometry args={[0.18, 24, 24]} />
+      <meshStandardMaterial
+        color="#f97316"
+        emissive="#f97316"
+        emissiveIntensity={0.35}
+      />
+    </mesh>
+  );
+}
+
 function App() {
   const [activeTab, setActiveTab] = useState<ActiveDockTab>("file");
   const [selectedBoltIds, setSelectedBoltIds] = useState<string[]>([]);
   const [hoveredBoltIds, setHoveredBoltIds] = useState<string[]>([]);
   const [isCtrlSelecting, setIsCtrlSelecting] = useState(false);
+
+  const [customBoltX, setCustomBoltX] = useState(0);
+  const [customBoltY, setCustomBoltY] = useState(0);
 
   const [settings, setSettings] = useState<AppSettings>({
     designCode: "AISC",
@@ -106,26 +122,26 @@ function App() {
   ]);
 
   useEffect(() => {
-  function onKeyDown(event: KeyboardEvent) {
-    if (event.key === "Control") {
-      setIsCtrlSelecting(true);
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === "Control") {
+        setIsCtrlSelecting(true);
+      }
     }
-  }
 
-  function onKeyUp(event: KeyboardEvent) {
-    if (event.key === "Control") {
-      setIsCtrlSelecting(false);
+    function onKeyUp(event: KeyboardEvent) {
+      if (event.key === "Control") {
+        setIsCtrlSelecting(false);
+      }
     }
-  }
 
-  window.addEventListener("keydown", onKeyDown);
-  window.addEventListener("keyup", onKeyUp);
+    window.addEventListener("keydown", onKeyDown);
+    window.addEventListener("keyup", onKeyUp);
 
-  return () => {
-    window.removeEventListener("keydown", onKeyDown);
-    window.removeEventListener("keyup", onKeyUp);
-  };
-}, []);
+    return () => {
+      window.removeEventListener("keydown", onKeyDown);
+      window.removeEventListener("keyup", onKeyUp);
+    };
+  }, []);
 
   function runAnalysis() {
     const result = analyzeBoltGroup(bolts, loads);
@@ -144,6 +160,11 @@ function App() {
           bolts={bolts}
           setBolts={setBolts}
           selectedBoltIds={selectedBoltIds}
+          setSelectedBoltIds={setSelectedBoltIds}
+          customBoltX={customBoltX}
+          setCustomBoltX={setCustomBoltX}
+          customBoltY={customBoltY}
+          setCustomBoltY={setCustomBoltY}
         />
       );
     }
@@ -227,7 +248,16 @@ function App() {
           Run Analysis
         </button>
 
-        <Canvas camera={{ position: [0, -12, 8], fov: 50 }}>
+        <Canvas
+          orthographic
+          camera={{
+            position: [0, 0, 30],
+            up: [0, 1, 0],
+            zoom: 40,
+            near: 0.1,
+            far: 1000,
+          }}
+        >
           <color attach="background" args={[isDark ? "#020617" : "#f8fafc"]} />
 
           <BoltSelectionBox
@@ -249,6 +279,8 @@ function App() {
             position={[0, 0, -0.05]}
           />
 
+          <CustomBoltPreviewDot x={customBoltX} y={customBoltY} />
+
           {loads.map((load) => (
             <AppliedLoadArrow key={load.id} load={load} />
           ))}
@@ -264,7 +296,12 @@ function App() {
             />
           ))}
 
-          <OrbitControls enableRotate={false} enablePan={!isCtrlSelecting} enableZoom={true} />
+          <OrbitControls
+            enableRotate={false}
+            enablePan={!isCtrlSelecting}
+            enableZoom={true}
+            target={[0, 0, 0]}
+          />
         </Canvas>
 
         <BottomDock activeTab={activeTab} setActiveTab={setActiveTab} />
