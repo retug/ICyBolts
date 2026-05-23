@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import type { BoltData } from "../types/bolts";
 import { boltSizeOptions } from "../data/boltSizes";
@@ -8,11 +8,36 @@ type BoltPanelProps = {
   setBolts: React.Dispatch<React.SetStateAction<BoltData[]>>;
   selectedBoltIds: string[];
   setSelectedBoltIds: React.Dispatch<React.SetStateAction<string[]>>;
-  customBoltX: number;
-  setCustomBoltX: React.Dispatch<React.SetStateAction<number>>;
-  customBoltY: number;
-  setCustomBoltY: React.Dispatch<React.SetStateAction<number>>;
+  customBoltX: string;
+  setCustomBoltX: React.Dispatch<React.SetStateAction<string>>;
+  customBoltY: string;
+  setCustomBoltY: React.Dispatch<React.SetStateAction<string>>;
 };
+
+function isValidNumberText(value: string) {
+  if (value.trim() === "") return false;
+  if (value === "-") return false;
+  if (value === ".") return false;
+  if (value === "-.") return false;
+
+  return Number.isFinite(Number(value));
+}
+
+function inputStyleWithValidation(isValid: boolean): React.CSSProperties {
+  return {
+    ...inputStyle,
+    border: isValid ? "1px solid #d1d5db" : "2px solid #ef4444",
+    background: isValid ? "#ffffff" : "#fef2f2",
+  };
+}
+
+function tableInputStyleWithValidation(isValid: boolean): React.CSSProperties {
+  return {
+    ...tableInputStyle,
+    border: isValid ? "1px solid #d1d5db" : "2px solid #ef4444",
+    background: isValid ? "#ffffff" : "#fef2f2",
+  };
+}
 
 export function BoltPanel({
   bolts,
@@ -26,72 +51,63 @@ export function BoltPanel({
 }: BoltPanelProps) {
   const [rows, setRows] = useState(2);
   const [cols, setCols] = useState(2);
-  const [spacingX, setSpacingX] = useState(4);
-  const [spacingY, setSpacingY] = useState(4);
-  const [customX, setCustomX] = useState(0);
-  const [customY, setCustomY] = useState(0);
+  const [spacingX, setSpacingX] = useState("4");
+  const [spacingY, setSpacingY] = useState("4");
 
-  useEffect(() => {
-  function onKeyDown(event: KeyboardEvent) {
-    const activeElement =
-      document.activeElement as HTMLElement | null;
+  const [selectedBoltDrafts, setSelectedBoltDrafts] = useState<
+    Record<string, { x: string; y: string }>
+  >({});
 
-    const isTyping =
-      activeElement?.tagName === "INPUT" ||
-      activeElement?.tagName === "TEXTAREA" ||
-      activeElement?.tagName === "SELECT";
-
-    if (isTyping) return;
-
-    if (
-      event.key === "Delete" ||
-      event.key === "Backspace"
-    ) {
-      if (selectedBoltIds.length === 0) return;
-
-      setBolts((prev) =>
-        prev.filter(
-          (bolt) =>
-            !selectedBoltIds.includes(bolt.id)
-        )
-      );
-
-      setSelectedBoltIds([]);
-    }
-  }
-
-  window.addEventListener("keydown", onKeyDown);
-
-  return () => {
-    window.removeEventListener(
-      "keydown",
-      onKeyDown
-    );
-  };
-}, [
-  selectedBoltIds,
-  setBolts,
-  setSelectedBoltIds,
-]);
-
-  const selectedBolts = bolts.filter((bolt) =>
-    selectedBoltIds.includes(bolt.id)
+  const selectedBolts = useMemo(
+    () => bolts.filter((bolt) => selectedBoltIds.includes(bolt.id)),
+    [bolts, selectedBoltIds]
   );
 
-  function updateBolt(
+  useEffect(() => {
+    setSelectedBoltDrafts((prev) => {
+      const next: Record<string, { x: string; y: string }> = {};
+
+      for (const bolt of selectedBolts) {
+        next[bolt.id] = prev[bolt.id] ?? {
+          x: String(bolt.x),
+          y: String(bolt.y),
+        };
+      }
+
+      return next;
+    });
+  }, [selectedBolts]);
+
+  function getCurrentBoltSize() {
+    return (
+      boltSizeOptions.find((b) => b.label === bolts[0]?.label) ??
+      boltSizeOptions.find((b) => b.label === "3/4")!
+    );
+  }
+
+  function updateBoltCoordinate(
     id: string,
-    field: keyof BoltData,
-    value: string
+    field: "x" | "y",
+    rawValue: string
   ) {
+    setSelectedBoltDrafts((prev) => ({
+      ...prev,
+      [id]: {
+        x: field === "x" ? rawValue : prev[id]?.x ?? "",
+        y: field === "y" ? rawValue : prev[id]?.y ?? "",
+      },
+    }));
+
+    if (!isValidNumberText(rawValue)) return;
+
+    const numberValue = Number(rawValue);
+
     setBolts((prev) =>
       prev.map((bolt) =>
         bolt.id === id
           ? {
               ...bolt,
-              [field]:
-                field === "label"
-                  ? value
-                  : Number(value),
+              [field]: numberValue,
             }
           : bolt
       )
@@ -99,9 +115,7 @@ export function BoltPanel({
   }
 
   function updateBoltSize(label: string) {
-    const selectedSize = boltSizeOptions.find(
-      (size) => size.label === label
-    );
+    const selectedSize = boltSizeOptions.find((size) => size.label === label);
 
     if (!selectedSize) return;
 
@@ -116,36 +130,53 @@ export function BoltPanel({
     );
   }
 
+  function addCustomBolt() {
+    if (!isValidNumberText(customBoltX) || !isValidNumberText(customBoltY)) {
+      return;
+    }
+
+    const selectedSize = getCurrentBoltSize();
+
+    setBolts((prev) => [
+      ...prev,
+      {
+        id: crypto.randomUUID(),
+        label: selectedSize.label,
+        x: Number(customBoltX),
+        y: Number(customBoltY),
+        unitSystem: selectedSize.unitSystem,
+        diameter: selectedSize.diameter,
+        renderSize: selectedSize.renderSize,
+        force: {
+          fx: 0,
+          fy: 0,
+        },
+      },
+    ]);
+  }
+
   function addParametricGridToAnalysis() {
-    const selectedSize =
-      boltSizeOptions.find(
-        (b) => b.label === bolts[0]?.label
-      ) ??
-      boltSizeOptions.find(
-        (b) => b.label === "3/4"
-      )!;
+    if (!isValidNumberText(spacingX) || !isValidNumberText(spacingY)) return;
+
+    const selectedSize = getCurrentBoltSize();
+    const spacingXNumber = Number(spacingX);
+    const spacingYNumber = Number(spacingY);
 
     const generatedBolts: BoltData[] = [];
 
-    const xStart =
-      -((cols - 1) * spacingX) / 2;
-
-    const yStart =
-      -((rows - 1) * spacingY) / 2;
+    const xStart = -((cols - 1) * spacingXNumber) / 2;
+    const yStart = -((rows - 1) * spacingYNumber) / 2;
 
     for (let r = 0; r < rows; r++) {
       for (let c = 0; c < cols; c++) {
         generatedBolts.push({
           id: crypto.randomUUID(),
           label: selectedSize.label,
-          x: xStart + c * spacingX,
-          y: yStart + r * spacingY,
-          unitSystem:
-            selectedSize.unitSystem,
-          diameter:
-            selectedSize.diameter,
-          renderSize:
-            selectedSize.renderSize,
+          x: xStart + c * spacingXNumber,
+          y: yStart + r * spacingYNumber,
+          unitSystem: selectedSize.unitSystem,
+          diameter: selectedSize.diameter,
+          renderSize: selectedSize.renderSize,
           force: {
             fx: 0,
             fy: 0,
@@ -155,43 +186,21 @@ export function BoltPanel({
     }
 
     setBolts(generatedBolts);
+    setSelectedBoltIds([]);
   }
 
-  function getCurrentBoltSize() {
-  return (
-    boltSizeOptions.find((b) => b.label === bolts[0]?.label) ??
-    boltSizeOptions.find((b) => b.label === "3/4")!
-  );
-}
+  function deleteSelectedBolts() {
+    setBolts((prev) =>
+      prev.filter((bolt) => !selectedBoltIds.includes(bolt.id))
+    );
 
-function addCustomBolt() {
-  const selectedSize = getCurrentBoltSize();
+    setSelectedBoltIds([]);
+  }
 
-  setBolts((prev) => [
-    ...prev,
-    {
-      id: crypto.randomUUID(),
-      label: selectedSize.label,
-      x: customBoltX,
-      y: customBoltY,
-      unitSystem: selectedSize.unitSystem,
-      diameter: selectedSize.diameter,
-      renderSize: selectedSize.renderSize,
-      force: {
-        fx: 0,
-        fy: 0,
-      },
-    },
-  ]);
-}
-
-function deleteSelectedBolts() {
-  setBolts((prev) =>
-    prev.filter((bolt) => !selectedBoltIds.includes(bolt.id))
-  );
-
-  setSelectedBoltIds([]);
-}
+  const customBoltXIsValid = isValidNumberText(customBoltX);
+  const customBoltYIsValid = isValidNumberText(customBoltY);
+  const spacingXIsValid = isValidNumberText(spacingX);
+  const spacingYIsValid = isValidNumberText(spacingY);
 
   return (
     <div
@@ -217,44 +226,29 @@ function deleteSelectedBolts() {
             lineHeight: 1.45,
           }}
         >
-          Create a parametric bolt
-          group and edit selected
-          bolts from the scene.
+          Create a parametric bolt group and edit selected bolts from the scene.
         </p>
       </div>
 
       <section style={cardStyle}>
-        <h3 style={sectionTitleStyle}>
-          Global Bolt Size
-        </h3>
+        <h3 style={sectionTitleStyle}>Global Bolt Size</h3>
 
         <label style={labelStyle}>
           <span>Bolt Size</span>
 
           <select
             style={inputStyle}
-            value={
-              bolts[0]?.label ?? "3/4"
-            }
-            onChange={(e) =>
-              updateBoltSize(
-                e.target.value
-              )
-            }
+            value={bolts[0]?.label ?? "3/4"}
+            onChange={(e) => updateBoltSize(e.target.value)}
           >
-            {boltSizeOptions.map(
-              (size) => (
-                <option
-                  key={`${size.unitSystem}-${size.label}`}
-                  value={size.label}
-                >
-                  {size.unitSystem ===
-                  "imperial"
-                    ? `${size.label}"`
-                    : size.label}
-                </option>
-              )
-            )}
+            {boltSizeOptions.map((size) => (
+              <option
+                key={`${size.unitSystem}-${size.label}`}
+                value={size.label}
+              >
+                {size.unitSystem === "imperial" ? `${size.label}"` : size.label}
+              </option>
+            ))}
           </select>
         </label>
       </section>
@@ -272,41 +266,50 @@ function deleteSelectedBolts() {
           <label style={labelStyle}>
             <span>X</span>
             <input
-              style={inputStyle}
-              type="number"
-              step={0.25}
+              style={inputStyleWithValidation(customBoltXIsValid)}
+              type="text"
+              inputMode="decimal"
               value={customBoltX}
-              onChange={(e) => setCustomBoltX(Number(e.target.value))}
+              onChange={(e) => setCustomBoltX(e.target.value)}
             />
           </label>
 
           <label style={labelStyle}>
             <span>Y</span>
             <input
-              style={inputStyle}
-              type="number"
-              step={0.25}
+              style={inputStyleWithValidation(customBoltYIsValid)}
+              type="text"
+              inputMode="decimal"
               value={customBoltY}
-              onChange={(e) => setCustomBoltY(Number(e.target.value))}
+              onChange={(e) => setCustomBoltY(e.target.value)}
             />
           </label>
         </div>
 
-        <button style={primaryButtonStyle} onClick={addCustomBolt}>
+        <button
+          style={{
+            ...primaryButtonStyle,
+            background:
+              customBoltXIsValid && customBoltYIsValid ? "#2563eb" : "#94a3b8",
+            cursor:
+              customBoltXIsValid && customBoltYIsValid
+                ? "pointer"
+                : "not-allowed",
+          }}
+          disabled={!customBoltXIsValid || !customBoltYIsValid}
+          onClick={addCustomBolt}
+        >
           Add Bolt
         </button>
       </section>
 
       <section style={cardStyle}>
-        <h3 style={sectionTitleStyle}>
-          Parametric Grid
-        </h3>
+        <h3 style={sectionTitleStyle}>Parametric Grid</h3>
 
         <div
           style={{
             display: "grid",
-            gridTemplateColumns:
-              "1fr 1fr",
+            gridTemplateColumns: "1fr 1fr",
             gap: 12,
           }}
         >
@@ -319,13 +322,7 @@ function deleteSelectedBolts() {
               min={1}
               step={1}
               value={rows}
-              onChange={(e) =>
-                setRows(
-                  Number(
-                    e.target.value
-                  )
-                )
-              }
+              onChange={(e) => setRows(Math.max(1, Number(e.target.value)))}
             />
           </label>
 
@@ -338,88 +335,66 @@ function deleteSelectedBolts() {
               min={1}
               step={1}
               value={cols}
-              onChange={(e) =>
-                setCols(
-                  Number(
-                    e.target.value
-                  )
-                )
-              }
+              onChange={(e) => setCols(Math.max(1, Number(e.target.value)))}
             />
           </label>
 
           <label style={labelStyle}>
-            <span>
-              Horizontal Spacing
-            </span>
+            <span>Horizontal Spacing</span>
 
             <input
-              style={inputStyle}
-              type="number"
-              min={0}
-              step={0.25}
+              style={inputStyleWithValidation(spacingXIsValid)}
+              type="text"
+              inputMode="decimal"
               value={spacingX}
-              onChange={(e) =>
-                setSpacingX(
-                  Number(
-                    e.target.value
-                  )
-                )
-              }
+              onChange={(e) => setSpacingX(e.target.value)}
             />
           </label>
 
           <label style={labelStyle}>
-            <span>
-              Vertical Spacing
-            </span>
+            <span>Vertical Spacing</span>
 
             <input
-              style={inputStyle}
-              type="number"
-              min={0}
-              step={0.25}
+              style={inputStyleWithValidation(spacingYIsValid)}
+              type="text"
+              inputMode="decimal"
               value={spacingY}
-              onChange={(e) =>
-                setSpacingY(
-                  Number(
-                    e.target.value
-                  )
-                )
-              }
+              onChange={(e) => setSpacingY(e.target.value)}
             />
           </label>
         </div>
 
         <button
-          style={primaryButtonStyle}
-          onClick={
-            addParametricGridToAnalysis
-          }
+          style={{
+            ...primaryButtonStyle,
+            background:
+              spacingXIsValid && spacingYIsValid ? "#2563eb" : "#94a3b8",
+            cursor:
+              spacingXIsValid && spacingYIsValid ? "pointer" : "not-allowed",
+          }}
+          disabled={!spacingXIsValid || !spacingYIsValid}
+          onClick={addParametricGridToAnalysis}
         >
           Add to Analysis
         </button>
       </section>
 
       <section style={cardStyle}>
-        <h3 style={sectionTitleStyle}>
-          Selected Bolts
-        </h3>
+        <h3 style={sectionTitleStyle}>Selected Bolts</h3>
 
         <button
-  style={{
-    ...primaryButtonStyle,
-    background: selectedBoltIds.length > 0 ? "#dc2626" : "#94a3b8",
-    cursor: selectedBoltIds.length > 0 ? "pointer" : "not-allowed",
-  }}
-  disabled={selectedBoltIds.length === 0}
-  onClick={deleteSelectedBolts}
->
-  Delete Selected Bolt{selectedBoltIds.length === 1 ? "" : "s"}
-</button>
+          style={{
+            ...primaryButtonStyle,
+            background: selectedBoltIds.length > 0 ? "#dc2626" : "#94a3b8",
+            cursor: selectedBoltIds.length > 0 ? "pointer" : "not-allowed",
+          }}
+          disabled={selectedBoltIds.length === 0}
+          onClick={deleteSelectedBolts}
+        >
+          Delete Selected Bolt{selectedBoltIds.length === 1 ? "" : "s"}
+        </button>
 
-        {selectedBolts.length ===
-          0 && (
+        {selectedBolts.length === 0 && (
           <p
             style={{
               color: "#64748b",
@@ -427,9 +402,7 @@ function deleteSelectedBolts() {
               margin: 0,
             }}
           >
-            Drag a selection window
-            in the scene to edit
-            bolts.
+            Drag a selection window in the scene to edit bolts.
           </p>
         )}
 
@@ -443,122 +416,71 @@ function deleteSelectedBolts() {
             <table
               style={{
                 width: "100%",
-                borderCollapse:
-                  "collapse",
+                borderCollapse: "collapse",
                 fontSize: 13,
               }}
             >
               <thead>
                 <tr>
-                  <th style={thStyle}>
-                    Bolt
-                  </th>
-
-                  <th style={thStyle}>
-                    X
-                  </th>
-
-                  <th style={thStyle}>
-                    Y
-                  </th>
-
-                  <th style={thStyle}>
-                    F
-                  </th>
+                  <th style={thStyle}>Bolt</th>
+                  <th style={thStyle}>X</th>
+                  <th style={thStyle}>Y</th>
+                  <th style={thStyle}>F</th>
                 </tr>
               </thead>
 
               <tbody>
-                {selectedBolts.map(
-                  (
-                    bolt,
-                    index
-                  ) => (
-                    <tr
-                      key={bolt.id}
-                    >
-                      <td
-                        style={
-                          tdStyle
-                        }
-                      >
-                        B
-                        {index +
-                          1}
-                      </td>
+                {selectedBolts.map((bolt, index) => {
+                  const draft = selectedBoltDrafts[bolt.id] ?? {
+                    x: String(bolt.x),
+                    y: String(bolt.y),
+                  };
 
-                      <td
-                        style={
-                          tdStyle
-                        }
-                      >
+                  const xIsValid = isValidNumberText(draft.x);
+                  const yIsValid = isValidNumberText(draft.y);
+
+                  return (
+                    <tr key={bolt.id}>
+                      <td style={tdStyle}>B{index + 1}</td>
+
+                      <td style={tdStyle}>
                         <input
-                          style={
-                            tableInputStyle
-                          }
-                          type="number"
-                          value={
-                            bolt.x
-                          }
-                          step={
-                            0.25
-                          }
-                          onChange={(
-                            e
-                          ) =>
-                            updateBolt(
+                          style={tableInputStyleWithValidation(xIsValid)}
+                          type="text"
+                          inputMode="decimal"
+                          value={draft.x}
+                          onChange={(e) =>
+                            updateBoltCoordinate(
                               bolt.id,
                               "x",
-                              e
-                                .target
-                                .value
+                              e.target.value
                             )
                           }
                         />
                       </td>
 
-                      <td
-                        style={
-                          tdStyle
-                        }
-                      >
+                      <td style={tdStyle}>
                         <input
-                          style={
-                            tableInputStyle
-                          }
-                          type="number"
-                          value={
-                            bolt.y
-                          }
-                          step={
-                            0.25
-                          }
-                          onChange={(
-                            e
-                          ) =>
-                            updateBolt(
+                          style={tableInputStyleWithValidation(yIsValid)}
+                          type="text"
+                          inputMode="decimal"
+                          value={draft.y}
+                          onChange={(e) =>
+                            updateBoltCoordinate(
                               bolt.id,
                               "y",
-                              e
-                                .target
-                                .value
+                              e.target.value
                             )
                           }
                         />
                       </td>
 
-                      <td
-                        style={
-                          tdStyle
-                        }
-                      >
-                        {bolt.force?.magnitude?.toFixed(
-                          2
-                        ) ?? "-"}
+                      <td style={tdStyle}>
+                        {bolt.force?.magnitude?.toFixed(2) ?? "-"}
                       </td>
                     </tr>
-                  )
-                )}
+                  );
+                })}
               </tbody>
             </table>
           </div>

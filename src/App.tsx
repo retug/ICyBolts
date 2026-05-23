@@ -35,8 +35,8 @@ function App() {
   const [hoveredBoltIds, setHoveredBoltIds] = useState<string[]>([]);
   const [isCtrlSelecting, setIsCtrlSelecting] = useState(false);
 
-  const [customBoltX, setCustomBoltX] = useState(0);
-  const [customBoltY, setCustomBoltY] = useState(0);
+  const [customBoltX, setCustomBoltX] = useState("0");
+  const [customBoltY, setCustomBoltY] = useState("0");
 
   const [settings, setSettings] = useState<AppSettings>({
     designCode: "AISC",
@@ -279,7 +279,10 @@ function App() {
             position={[0, 0, -0.05]}
           />
 
-          <CustomBoltPreviewDot x={customBoltX} y={customBoltY} />
+          <CustomBoltPreviewDot
+            x={Number(customBoltX) || 0}
+            y={Number(customBoltY) || 0}
+          />
 
           {loads.map((load) => (
             <AppliedLoadArrow key={load.id} load={load} />
