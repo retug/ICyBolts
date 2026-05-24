@@ -17,6 +17,8 @@ export type BrandtResult = [
   Mi: number
 ];
 
+const DEBUG_BRANDT = true;
+
 export function brandt(
   xloc: number[],
   yloc: number[],
@@ -46,6 +48,26 @@ export function brandt(
     J += (xloc[i] - anchor_x_bar) ** 2 + (yloc[i] - anchor_y_bar) ** 2;
   }
 
+  const loadMagnitude = Math.sqrt(Px ** 2 + Py ** 2);
+  const loadScale = loadMagnitude > 1e-9 ? loadMagnitude : 1;
+
+  if (DEBUG_BRANDT) {
+    console.group("Brandt Method Debug");
+    console.log("BRANDT DEBUG STARTED");
+    console.log("Input", {
+      xloc,
+      yloc,
+      Px,
+      Py,
+      Mo,
+      J,
+      n,
+      centroid: [anchor_x_bar, anchor_y_bar],
+      loadMagnitude,
+      loadScale,
+    });
+  }
+
   if (Math.abs(Mo) < 1e-8) {
     const Fx_per_bolt = -Px / n;
     const Fy_per_bolt = -Py / n;
@@ -60,6 +82,15 @@ export function brandt(
       Fx: Fx_per_bolt,
       Fy: Fy_per_bolt,
     }));
+
+    if (DEBUG_BRANDT) {
+      console.log("Mo is zero. Direct shear case only.", {
+        Fx_per_bolt,
+        Fy_per_bolt,
+        table,
+      });
+      console.groupEnd();
+    }
 
     return [detailedOutput, [anchor_x_bar, anchor_y_bar], 0, table, 0];
   }
@@ -80,14 +111,33 @@ export function brandt(
 
   let IC_new: [number, number] = [...IC_initial];
 
-  let Cu = Math.abs(Mi / Mo);
+  let Cu = Math.abs(Mi / (Mo / loadScale));
 
-  let count = 0;
+  if (DEBUG_BRANDT) {
+    console.log("Iteration 0 / Initial IC", {
+      IC: IC_initial,
+      Mi,
+      Mp_new: Mo,
+      Mp_unit: Mo / loadScale,
+      Cu,
+      Rx,
+      Ry,
+      fxx,
+      fyy,
+      F,
+      ax_new,
+      ay_new,
+      table,
+    });
+  }
+
+  let count = 1;
 
   while (count < 5000) {
     IC_new = [IC_new[0] + ax_new / 10, IC_new[1] + ay_new / 10];
 
     const Mp_new = momentAboutPoint(Px, Py, Mo, IC_new[0], IC_new[1]);
+    const Mp_unit = Mp_new / loadScale;
 
     [Rx, Ry, Mi, table] = icBrandt(IC_new, xloc, yloc, Px, Py, Mp_new);
 
@@ -95,7 +145,25 @@ export function brandt(
     fyy = Py + Ry;
     F = m.sqrt(fxx * fxx + fyy * fyy);
 
-    Cu = Math.abs(Mi / Mp_new);
+    Cu = Math.abs(Mi / Mp_unit);
+
+    if (DEBUG_BRANDT) {
+      console.log(`Iteration ${count}`, {
+        IC: IC_new,
+        Mi,
+        Mp_new,
+        Mp_unit,
+        Cu,
+        Rx,
+        Ry,
+        fxx,
+        fyy,
+        F,
+        ax_new,
+        ay_new,
+        table,
+      });
+    }
 
     ax_new = (-fyy * J) / (n * Mo);
     ay_new = (fxx * J) / (n * Mo);
@@ -103,6 +171,17 @@ export function brandt(
     if (F <= tol) break;
 
     count++;
+  }
+
+  if (DEBUG_BRANDT) {
+    console.log("Final Brandt Result", {
+      IC: IC_new,
+      Cu,
+      Mi,
+      iterations: count,
+      table,
+    });
+    console.groupEnd();
   }
 
   return [detailedOutput, IC_new, Cu, table, Mi];
