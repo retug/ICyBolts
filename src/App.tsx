@@ -229,30 +229,44 @@ function App() {
 
   return (
     <div
+    style={{
+      width: "100vw",
+      height: "100vh",
+      overflow: "hidden",
+      display: "flex",
+      background: isDark ? "#020617" : "#f8fafc",
+      color: isDark ? "#e5e7eb" : "#111827",
+    }}
+  >
+    <aside
       style={{
-        width: "100vw",
+        flex: "0 0 30%",
+        width: "30%",
+        maxWidth: "30%",
         height: "100vh",
-        display: "flex",
-        background: isDark ? "#020617" : "#f8fafc",
-        color: isDark ? "#e5e7eb" : "#111827",
+        boxSizing: "border-box",
+        padding: 18,
+        overflowY: "auto",
+        overflowX: "hidden",
+        background: isDark ? "#0f172a" : "#ffffff",
+        borderRight: `1px solid ${isDark ? "#1e293b" : "#d1d5db"}`,
+        boxShadow: "4px 0 20px rgba(0,0,0,0.15)",
+        zIndex: 10,
       }}
     >
-      <aside
-        style={{
-          width: 380,
-          height: "100vh",
-          padding: 18,
-          overflowY: "auto",
-          background: isDark ? "#0f172a" : "#ffffff",
-          borderRight: `1px solid ${isDark ? "#1e293b" : "#d1d5db"}`,
-          boxShadow: "4px 0 20px rgba(0,0,0,0.15)",
-          zIndex: 10,
-        }}
-      >
-        {renderLeftPanel()}
-      </aside>
+      {renderLeftPanel()}
+    </aside>
 
-      <main style={{ flex: 1, position: "relative" }}>
+    <main
+      style={{
+        flex: "1 1 70%",
+        width: "70%",
+        height: "100vh",
+        minWidth: 0,
+        position: "relative",
+        overflow: "hidden",
+      }}
+    >
         {isCtrlSelecting && (activeTab === "bolts" || activeTab === "loads") && (
           <div
             style={{
