@@ -12,9 +12,12 @@ import { AppliedLoadArrow } from "./components/AppliedLoadArrow";
 import { BoltSelectionBox } from "./components/BoltSelectionBox";
 import { LoadSelectionBox } from "./components/LoadSelectionBox";
 import { Results } from "./components/Results";
-import type { BoltAnalysisResult } from "./analysis/analyzeBoltGroup";
+import { ViewOptionsPanel } from "./components/ViewOptionsPanel";
+import type { ViewOptions } from "./components/ViewOptionsPanel";
+import { ICMarker } from "./components/ICMarker";
 
 import { analyzeBoltGroup } from "./analysis/analyzeBoltGroup";
+import type { BoltAnalysisResult } from "./analysis/analyzeBoltGroup";
 
 import type { AppliedLoad, BoltData } from "./types/bolts";
 import type { ActiveDockTab, AppSettings } from "./types/app";
@@ -45,7 +48,17 @@ function App() {
 
   const [customBoltX, setCustomBoltX] = useState("0");
   const [customBoltY, setCustomBoltY] = useState("0");
-  const [analysisResult, setAnalysisResult] = useState<BoltAnalysisResult | null>(null);
+
+  const [analysisResult, setAnalysisResult] =
+    useState<BoltAnalysisResult | null>(null);
+
+  const [viewOptions, setViewOptions] = useState<ViewOptions>({
+    showBoltForceVectors: true,
+    showBoltForceLabels: true,
+    showAppliedForceLabels: true,
+    showIC: true,
+    autoRunAnalysis: false,
+  });
 
   const [settings, setSettings] = useState<AppSettings>({
     designCode: "AISC",
@@ -144,6 +157,7 @@ function App() {
         setBolts((prev) =>
           prev.filter((bolt) => !selectedBoltIds.includes(bolt.id))
         );
+
         setSelectedBoltIds([]);
         setHoveredBoltIds([]);
       }
@@ -152,6 +166,7 @@ function App() {
         setLoads((prev) =>
           prev.filter((load) => !selectedLoadIds.includes(load.id))
         );
+
         setSelectedLoadIds([]);
         setHoveredLoadIds([]);
       }
@@ -184,8 +199,25 @@ function App() {
     }
   }, [activeTab]);
 
+  useEffect(() => {
+    if (!viewOptions.autoRunAnalysis) return;
+    if (bolts.length === 0 || loads.length === 0) return;
+
+    const result = analyzeBoltGroup(bolts, loads);
+
+    setAnalysisResult(result);
+
+    setBolts((prev) =>
+      prev.map((bolt, index) => ({
+        ...bolt,
+        force: result.bolts[index]?.force,
+      }))
+    );
+  }, [loads, bolts.length, viewOptions.autoRunAnalysis]);
+
   function runAnalysis() {
     const result = analyzeBoltGroup(bolts, loads);
+
     setBolts(result.bolts);
     setAnalysisResult(result);
     setActiveTab("results");
@@ -233,44 +265,44 @@ function App() {
 
   return (
     <div
-    style={{
-      width: "100vw",
-      height: "100vh",
-      overflow: "hidden",
-      display: "flex",
-      background: isDark ? "#020617" : "#f8fafc",
-      color: isDark ? "#e5e7eb" : "#111827",
-    }}
-  >
-    <aside
       style={{
-        flex: "0 0 30%",
-        width: "30%",
-        maxWidth: "30%",
+        width: "100vw",
         height: "100vh",
-        boxSizing: "border-box",
-        padding: 18,
-        overflowY: "auto",
-        overflowX: "hidden",
-        background: isDark ? "#0f172a" : "#ffffff",
-        borderRight: `1px solid ${isDark ? "#1e293b" : "#d1d5db"}`,
-        boxShadow: "4px 0 20px rgba(0,0,0,0.15)",
-        zIndex: 10,
-      }}
-    >
-      {renderLeftPanel()}
-    </aside>
-
-    <main
-      style={{
-        flex: "1 1 70%",
-        width: "70%",
-        height: "100vh",
-        minWidth: 0,
-        position: "relative",
         overflow: "hidden",
+        display: "flex",
+        background: isDark ? "#020617" : "#f8fafc",
+        color: isDark ? "#e5e7eb" : "#111827",
       }}
     >
+      <aside
+        style={{
+          flex: "0 0 30%",
+          width: "30%",
+          maxWidth: "30%",
+          height: "100vh",
+          boxSizing: "border-box",
+          padding: 18,
+          overflowY: "auto",
+          overflowX: "hidden",
+          background: isDark ? "#0f172a" : "#ffffff",
+          borderRight: `1px solid ${isDark ? "#1e293b" : "#d1d5db"}`,
+          boxShadow: "4px 0 20px rgba(0,0,0,0.15)",
+          zIndex: 10,
+        }}
+      >
+        {renderLeftPanel()}
+      </aside>
+
+      <main
+        style={{
+          flex: "1 1 70%",
+          width: "70%",
+          height: "100vh",
+          minWidth: 0,
+          position: "relative",
+          overflow: "hidden",
+        }}
+      >
         {isCtrlSelecting && (activeTab === "bolts" || activeTab === "loads") && (
           <div
             style={{
@@ -310,6 +342,11 @@ function App() {
         >
           Run Analysis
         </button>
+
+        <ViewOptionsPanel
+          viewOptions={viewOptions}
+          setViewOptions={setViewOptions}
+        />
 
         <Canvas
           orthographic
@@ -367,6 +404,7 @@ function App() {
                 isSelected: selectedLoadIds.includes(load.id),
                 isHovered: hoveredLoadIds.includes(load.id),
               }}
+              showLabel={viewOptions.showAppliedForceLabels}
             />
           ))}
 
@@ -378,8 +416,18 @@ function App() {
                 isSelected: selectedBoltIds.includes(bolt.id),
                 isHovered: hoveredBoltIds.includes(bolt.id),
               }}
+              showForceVector={viewOptions.showBoltForceVectors}
+              showForceLabel={viewOptions.showBoltForceLabels}
             />
           ))}
+
+          {viewOptions.showIC && analysisResult && (
+            <ICMarker
+              x={analysisResult.IC[0]}
+              y={analysisResult.IC[1]}
+              showLabel={true}
+            />
+          )}
 
           <OrbitControls
             enableRotate={false}

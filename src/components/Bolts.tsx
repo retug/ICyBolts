@@ -1,15 +1,17 @@
 import * as THREE from "three";
-
+import { Text } from "@react-three/drei";
 import type { BoltData } from "../types/bolts";
 
 type BoltProps = {
   bolt: BoltData;
   showForceVector?: boolean;
+  showForceLabel?: boolean;
 };
 
 export function Bolt({
   bolt,
   showForceVector = true,
+  showForceLabel = true,
 }: BoltProps) {
   const {
     id,
@@ -125,6 +127,17 @@ export function Bolt({
             }
           />
         )}
+      {showForceLabel && force && (
+        <Text
+          position={[0.45, 0.45, renderSize.diameter * 2.2]}
+          fontSize={0.22}
+          color="#e5e7eb"
+          anchorX="left"
+          anchorY="middle"
+        >
+          {`R=${Math.sqrt(force.fx ** 2 + force.fy ** 2).toFixed(2)}`}
+        </Text>
+      )}
     </group>
   );
 }

@@ -1,30 +1,47 @@
 import * as THREE from "three";
+import { Text } from "@react-three/drei";
+
 import type { AppliedLoad } from "../types/bolts";
 
 type AppliedLoadArrowProps = {
   load: AppliedLoad;
+  showLabel?: boolean;
 };
 
 const LOAD_BLUE = "#38bdf8";
 const LOAD_HOVER = "#7dd3fc";
 const LOAD_SELECTED = "#f97316";
 
-export function AppliedLoadArrow({ load }: AppliedLoadArrowProps) {
+export function AppliedLoadArrow({
+  load,
+  showLabel = true,
+}: AppliedLoadArrowProps) {
   const angleRad = (load.angleDeg * Math.PI) / 180;
 
-  const direction = new THREE.Vector3(
-    Math.cos(angleRad),
-    Math.sin(angleRad),
-    0
-  ).normalize();
+  const fx =
+    load.inputMode === "components"
+      ? load.fx
+      : load.magnitude * Math.cos(angleRad);
+
+  const fy =
+    load.inputMode === "components"
+      ? load.fy
+      : load.magnitude * Math.sin(angleRad);
+
+  const forceMagnitude = Math.sqrt(fx ** 2 + fy ** 2);
+
+  const direction =
+    forceMagnitude > 1e-9
+      ? new THREE.Vector3(fx, fy, 0).normalize()
+      : new THREE.Vector3(1, 0, 0);
 
   const color = load.isSelected
     ? LOAD_SELECTED
     : load.isHovered
-    ? LOAD_HOVER
-    : LOAD_BLUE;
+      ? LOAD_HOVER
+      : LOAD_BLUE;
 
-  const length = Math.max(1.5, Math.abs(load.magnitude) * 0.15);
+  const length = Math.max(1.5, forceMagnitude * 0.15);
 
   return (
     <group
@@ -34,18 +51,19 @@ export function AppliedLoadArrow({ load }: AppliedLoadArrowProps) {
         loadId: load.id,
       }}
     >
-      <arrowHelper
-        args={[
-          direction,
-          new THREE.Vector3(0, 0, 0),
-          length,
-          new THREE.Color(color),
-          length * 0.25,
-          length * 0.12,
-        ]}
-      />
+      {forceMagnitude > 1e-9 && (
+        <arrowHelper
+          args={[
+            direction,
+            new THREE.Vector3(0, 0, 0),
+            length,
+            new THREE.Color(color),
+            length * 0.25,
+            length * 0.12,
+          ]}
+        />
+      )}
 
-      {/* Invisible selection target */}
       <mesh
         userData={{
           selectableLoad: true,
@@ -61,7 +79,6 @@ export function AppliedLoadArrow({ load }: AppliedLoadArrowProps) {
         <meshBasicMaterial transparent opacity={0} />
       </mesh>
 
-      {/* Visible load point */}
       <mesh
         userData={{
           selectableLoad: true,
@@ -79,6 +96,22 @@ export function AppliedLoadArrow({ load }: AppliedLoadArrowProps) {
       {Math.abs(load.moment ?? 0) > 1e-9 && (
         <MomentArrow load={load} color={color} />
       )}
+
+      {showLabel && (
+        <Text
+          position={[0.45, 0.45, 0]}
+          fontSize={0.24}
+          color={color}
+          anchorX="left"
+          anchorY="middle"
+        >
+          {`F=${forceMagnitude.toFixed(2)}${
+            Math.abs(load.moment ?? 0) > 1e-9
+              ? `, M=${load.moment.toFixed(2)}`
+              : ""
+          }`}
+        </Text>
+      )}
     </group>
   );
 }
@@ -93,18 +126,22 @@ function MomentArrow({
   const radius = 0.85;
   const positive = load.moment > 0;
 
+  const startAngle = positive ? 0.15 : Math.PI * 1.85;
+  const endAngle = positive ? Math.PI * 1.65 : Math.PI * 0.35;
+
   const curve = new THREE.EllipseCurve(
     0,
     0,
     radius,
     radius,
-    positive ? 0.2 : Math.PI + 0.2,
-    positive ? Math.PI * 1.65 : Math.PI * 2.65,
+    startAngle,
+    endAngle,
     !positive,
     0
   );
 
   const points = curve.getPoints(48);
+
   const geometry = new THREE.BufferGeometry().setFromPoints(
     points.map((p) => new THREE.Vector3(p.x, p.y, 0))
   );
