@@ -11,6 +11,8 @@ import { BottomDock } from "./components/BottomDock";
 import { AppliedLoadArrow } from "./components/AppliedLoadArrow";
 import { BoltSelectionBox } from "./components/BoltSelectionBox";
 import { LoadSelectionBox } from "./components/LoadSelectionBox";
+import { Results } from "./components/Results";
+import type { BoltAnalysisResult } from "./analysis/analyzeBoltGroup";
 
 import { analyzeBoltGroup } from "./analysis/analyzeBoltGroup";
 
@@ -43,6 +45,7 @@ function App() {
 
   const [customBoltX, setCustomBoltX] = useState("0");
   const [customBoltY, setCustomBoltY] = useState("0");
+  const [analysisResult, setAnalysisResult] = useState<BoltAnalysisResult | null>(null);
 
   const [settings, setSettings] = useState<AppSettings>({
     designCode: "AISC",
@@ -184,6 +187,7 @@ function App() {
   function runAnalysis() {
     const result = analyzeBoltGroup(bolts, loads);
     setBolts(result.bolts);
+    setAnalysisResult(result);
     setActiveTab("results");
   }
 
@@ -219,11 +223,11 @@ function App() {
     }
 
     return (
-      <div>
-        <h2>Results</h2>
-        <p>Run the analysis to update bolt force vectors.</p>
-        <button onClick={runAnalysis}>Run Analysis</button>
-      </div>
+      <Results
+        result={analysisResult}
+        onRunAnalysis={runAnalysis}
+        unitSystem={settings.unitSystem}
+      />
     );
   }
 

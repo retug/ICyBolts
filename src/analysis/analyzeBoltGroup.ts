@@ -1,31 +1,48 @@
-import type {
-  AppliedLoad,
-  BoltData,
-} from "../types/bolts";
+import type { AppliedLoad, BoltData } from "../types/bolts";
 
 import { brandt } from "./brandt";
+
+export type ForceSummary = {
+  fx: number;
+  fy: number;
+  moment: number;
+};
 
 export type BoltAnalysisResult = {
   bolts: BoltData[];
   IC: [number, number];
   Cu: number;
   Mi: number;
+  externalForces: ForceSummary;
+  boltForces: ForceSummary;
 };
 
 export function analyzeBoltGroup(
   bolts: BoltData[],
   loads: AppliedLoad[]
 ): BoltAnalysisResult {
-  if (loads.length === 0) {
-    return {
-      bolts,
-      IC: [0, 0],
-      Cu: 0,
-      Mi: 0,
-    };
+  const emptyResult: BoltAnalysisResult = {
+    bolts,
+    IC: [0, 0],
+    Cu: 0,
+    Mi: 0,
+    externalForces: {
+      fx: 0,
+      fy: 0,
+      moment: 0,
+    },
+    boltForces: {
+      fx: 0,
+      fy: 0,
+      moment: 0,
+    },
+  };
+
+  if (bolts.length === 0 || loads.length === 0) {
+    return emptyResult;
   }
 
-  const load = loads[0];
+  const externalForces = sumExternalLoads(loads);
 
   const xloc = bolts.map((b) => b.x);
   const yloc = bolts.map((b) => b.y);
@@ -33,21 +50,15 @@ export function analyzeBoltGroup(
   const result = brandt(
     xloc,
     yloc,
-    load.x,
-    load.y,
-    load.angleDeg,
-    load.magnitude
+    externalForces.fx,
+    externalForces.fy,
+    externalForces.moment
   );
 
-  const IC = result[1] as [number, number];
-  const Cu = result[2] as number;
-
-  const table = result[3] as {
-    Fx: number;
-    Fy: number;
-  }[];
-
-  const Mi = result[4] as number;
+  const IC = result[1];
+  const Cu = result[2];
+  const table = result[3];
+  const Mi = result[4];
 
   const analyzedBolts = bolts.map((bolt, i) => ({
     ...bolt,
@@ -58,10 +69,66 @@ export function analyzeBoltGroup(
     },
   }));
 
+  const boltForces = analyzedBolts.reduce(
+    (sum, bolt) => {
+      const fx = bolt.force?.fx ?? 0;
+      const fy = bolt.force?.fy ?? 0;
+
+      return {
+        fx: sum.fx + fx,
+        fy: sum.fy + fy,
+        moment: sum.moment + bolt.x * fy - bolt.y * fx,
+      };
+    },
+    {
+      fx: 0,
+      fy: 0,
+      moment: 0,
+    }
+  );
+
   return {
     bolts: analyzedBolts,
     IC,
     Cu,
     Mi,
+    externalForces,
+    boltForces,
   };
+}
+
+function sumExternalLoads(loads: AppliedLoad[]): ForceSummary {
+  return loads.reduce(
+    (sum, load) => {
+      const fx = getLoadFx(load);
+      const fy = getLoadFy(load);
+
+      return {
+        fx: sum.fx + fx,
+        fy: sum.fy + fy,
+        moment: sum.moment + load.x * fy - load.y * fx + (load.moment ?? 0),
+      };
+    },
+    {
+      fx: 0,
+      fy: 0,
+      moment: 0,
+    }
+  );
+}
+
+function getLoadFx(load: AppliedLoad) {
+  if (load.inputMode === "components") {
+    return load.fx;
+  }
+
+  return load.magnitude * Math.cos((load.angleDeg * Math.PI) / 180);
+}
+
+function getLoadFy(load: AppliedLoad) {
+  if (load.inputMode === "components") {
+    return load.fy;
+  }
+
+  return load.magnitude * Math.sin((load.angleDeg * Math.PI) / 180);
 }

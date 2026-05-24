@@ -20,22 +20,25 @@ export type BrandtResult = [
 export function brandt(
   xloc: number[],
   yloc: number[],
-  P_xloc: number,
-  P_yloc: number,
-  P_angle: number,
-  magnitude: number,
+  Px: number,
+  Py: number,
+  Mo: number,
   tol = 0.000001
 ): BrandtResult {
   const m = Math;
-  const degToRad = m.PI / 180;
 
   const detailedOutput: unknown[] = [];
   const n = xloc.length;
+
+  if (n === 0) {
+    return [detailedOutput, [0, 0], 0, [], 0];
+  }
 
   const anchor_x_bar = xloc.reduce((a, b) => a + b, 0) / n;
   const anchor_y_bar = yloc.reduce((a, b) => a + b, 0) / n;
 
   detailedOutput.push(["Anchor Group C.G.", [anchor_x_bar, anchor_y_bar]]);
+  detailedOutput.push(["External Resultant", { Px, Py, Mo }]);
 
   let J = 0;
 
@@ -43,14 +46,9 @@ export function brandt(
     J += (xloc[i] - anchor_x_bar) ** 2 + (yloc[i] - anchor_y_bar) ** 2;
   }
 
-  const Px = -magnitude * m.cos(P_angle * degToRad);
-  const Py = -magnitude * m.sin(P_angle * degToRad);
-
-  const Mo = -Px * (P_yloc - anchor_y_bar) + Py * (P_xloc - anchor_x_bar);
-
   if (Math.abs(Mo) < 1e-8) {
-    const Fx_per_bolt = Px / n;
-    const Fy_per_bolt = Py / n;
+    const Fx_per_bolt = -Px / n;
+    const Fy_per_bolt = -Py / n;
 
     const table: BrandtTableRow[] = xloc.map((x, i) => ({
       xIC: x - anchor_x_bar,
@@ -71,15 +69,7 @@ export function brandt(
 
   const IC_initial: [number, number] = [anchor_x_bar + ax, anchor_y_bar + ay];
 
-  let [Rx, Ry, Mi, table] = icBrandt(
-    IC_initial,
-    xloc,
-    yloc,
-    Px,
-    Py,
-    P_xloc,
-    P_yloc
-  );
+  let [Rx, Ry, Mi, table] = icBrandt(IC_initial, xloc, yloc, Px, Py, Mo);
 
   let fxx = Px + Rx;
   let fyy = Py + Ry;
@@ -97,17 +87,9 @@ export function brandt(
   while (count < 5000) {
     IC_new = [IC_new[0] + ax_new / 10, IC_new[1] + ay_new / 10];
 
-    const Mp_new = -Px * (P_yloc - IC_new[1]) + Py * (P_xloc - IC_new[0]);
+    const Mp_new = momentAboutPoint(Px, Py, Mo, IC_new[0], IC_new[1]);
 
-    [Rx, Ry, Mi, table] = icBrandt(
-      IC_new,
-      xloc,
-      yloc,
-      Px,
-      Py,
-      P_xloc,
-      P_yloc
-    );
+    [Rx, Ry, Mi, table] = icBrandt(IC_new, xloc, yloc, Px, Py, Mp_new);
 
     fxx = Px + Rx;
     fyy = Py + Ry;
@@ -126,14 +108,23 @@ export function brandt(
   return [detailedOutput, IC_new, Cu, table, Mi];
 }
 
+function momentAboutPoint(
+  Px: number,
+  Py: number,
+  MoAboutOrigin: number,
+  x: number,
+  y: number
+) {
+  return MoAboutOrigin + Px * y - Py * x;
+}
+
 function icBrandt(
   IC: [number, number],
   xloc: number[],
   yloc: number[],
   Px: number,
   Py: number,
-  Pxloc: number,
-  Pyloc: number
+  Mp: number
 ): [number, number, number, BrandtTableRow[]] {
   const m = Math;
   const deltamax = 0.34;
@@ -156,7 +147,7 @@ function icBrandt(
 
   const Mi = moment.reduce((a, b) => a + b, 0);
 
-  const Rult = (-1 * (-Px * (Pyloc - ICy) + Py * (Pxloc - ICx))) / Mi;
+  const Rult = -Mp / Mi;
 
   const fx = xIC.map((_, i) => ((-yIC[i] * ri[i]) / di[i]) * Rult);
   const fy = xIC.map((x, i) => ((x * ri[i]) / di[i]) * Rult);
