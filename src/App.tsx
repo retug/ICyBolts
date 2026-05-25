@@ -98,7 +98,6 @@ function App() {
 
   const [settings, setSettings] = useState<AppSettings>({
     designCode: "AISC",
-    boltType: "bearing",
     unitSystem: "imperial",
     theme: "dark",
     designMethod: "LRFD",
@@ -346,7 +345,20 @@ function App() {
 
   function renderLeftPanel() {
     if (activeTab === "file") {
-      return <FilePanel settings={settings} setSettings={setSettings} />;
+  return (
+        <FilePanel
+          settings={settings}
+          setSettings={setSettings}
+          bolts={bolts}
+          setBolts={setBolts}
+          loads={loads}
+          setLoads={setLoads}
+          currentBoltData={currentBoltData}
+          setCurrentBoltData={setCurrentBoltData}
+          viewOptions={viewOptions}
+          setViewOptions={setViewOptions}
+        />
+      );
     }
 
     if (activeTab === "bolts") {
@@ -374,7 +386,7 @@ function App() {
           loads={loads}
           setLoads={setLoads}
           selectedLoadIds={selectedLoadIds}
-          setSelectedLoadIds={setSelectedLoadIds}
+          unitSystem={settings.unitSystem}
         />
       );
     }

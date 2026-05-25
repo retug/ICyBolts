@@ -1,12 +1,48 @@
+import { useRef, useState } from "react";
+
 import type { AppSettings } from "../types/app";
+import type { AppliedLoad, BoltData } from "../types/bolts";
+import type { ViewOptions } from "./ViewOptionsPanel";
+import type { CurrentBoltData } from "../App";
+
+import {
+  createProjectFile,
+  downloadProjectJson,
+  readProjectJsonFile,
+} from "../file/projectFile";
 
 type FilePanelProps = {
   settings: AppSettings;
   setSettings: React.Dispatch<React.SetStateAction<AppSettings>>;
+
+  bolts: BoltData[];
+  setBolts: React.Dispatch<React.SetStateAction<BoltData[]>>;
+
+  loads: AppliedLoad[];
+  setLoads: React.Dispatch<React.SetStateAction<AppliedLoad[]>>;
+
+  currentBoltData: CurrentBoltData;
+  setCurrentBoltData: React.Dispatch<React.SetStateAction<CurrentBoltData>>;
+
+  viewOptions: ViewOptions;
+  setViewOptions: React.Dispatch<React.SetStateAction<ViewOptions>>;
 };
 
-export function FilePanel({ settings, setSettings }: FilePanelProps) {
+export function FilePanel({
+  settings,
+  setSettings,
+  bolts,
+  setBolts,
+  loads,
+  setLoads,
+  currentBoltData,
+  setCurrentBoltData,
+  viewOptions,
+  setViewOptions,
+}: FilePanelProps) {
   const isDark = settings.theme === "dark";
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [fileMessage, setFileMessage] = useState<string>("");
 
   function updateSetting<K extends keyof AppSettings>(
     key: K,
@@ -16,6 +52,49 @@ export function FilePanel({ settings, setSettings }: FilePanelProps) {
       ...prev,
       [key]: value,
     }));
+  }
+
+  function saveJson() {
+    const projectFile = createProjectFile({
+      settings,
+      currentBoltData,
+      bolts,
+      loads,
+      viewOptions,
+    });
+
+    downloadProjectJson(projectFile);
+    setFileMessage("Project saved to JSON.");
+  }
+
+  async function importJson(file: File | null) {
+    if (!file) return;
+
+    try {
+      const projectFile = await readProjectJsonFile(file);
+
+      setSettings(projectFile.settings);
+      setCurrentBoltData(projectFile.currentBoltData);
+      setBolts(projectFile.bolts);
+      setLoads(projectFile.loads);
+
+      if (projectFile.viewOptions) {
+        setViewOptions(projectFile.viewOptions);
+      }
+
+      setFileMessage("Project imported successfully.");
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Unable to import the selected JSON file.";
+
+      setFileMessage(message);
+    } finally {
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
   }
 
   const inputStyle: React.CSSProperties = {
@@ -66,10 +145,7 @@ export function FilePanel({ settings, setSettings }: FilePanelProps) {
               style={inputStyle}
               value={settings.theme}
               onChange={(e) =>
-                updateSetting(
-                  "theme",
-                  e.target.value as AppSettings["theme"]
-                )
+                updateSetting("theme", e.target.value as AppSettings["theme"])
               }
             >
               <option value="dark">Dark</option>
@@ -116,24 +192,6 @@ export function FilePanel({ settings, setSettings }: FilePanelProps) {
           )}
 
           <label style={{ display: "grid", gap: 6 }}>
-            <span>Bolt Type</span>
-
-            <select
-              style={inputStyle}
-              value={settings.boltType}
-              onChange={(e) =>
-                updateSetting(
-                  "boltType",
-                  e.target.value as AppSettings["boltType"]
-                )
-              }
-            >
-              <option value="bearing">Bearing</option>
-              <option value="slip-critical">Slip Critical</option>
-            </select>
-          </label>
-
-          <label style={{ display: "grid", gap: 6 }}>
             <span>Units</span>
 
             <select
@@ -165,8 +223,30 @@ export function FilePanel({ settings, setSettings }: FilePanelProps) {
       >
         <h2 style={{ margin: 0, fontSize: 18 }}>File</h2>
 
-        <button style={primaryButton}>Save JSON</button>
-        <button style={secondaryButton(isDark)}>Load JSON</button>
+        <button style={primaryButton} onClick={saveJson}>
+          Save JSON
+        </button>
+
+        <button
+          style={secondaryButton(isDark)}
+          onClick={() => fileInputRef.current?.click()}
+        >
+          Load JSON
+        </button>
+
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="application/json,.json"
+          style={{ display: "none" }}
+          onChange={(e) => importJson(e.target.files?.[0] ?? null)}
+        />
+
+        {fileMessage && (
+          <p style={{ margin: 0, color: isDark ? "#94a3b8" : "#64748b" }}>
+            {fileMessage}
+          </p>
+        )}
       </section>
     </div>
   );
