@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls, Grid } from "@react-three/drei";
@@ -19,8 +19,21 @@ import { ICMarker } from "./components/ICMarker";
 import { analyzeBoltGroup } from "./analysis/analyzeBoltGroup";
 import type { BoltAnalysisResult } from "./analysis/analyzeBoltGroup";
 
-import type { AppliedLoad, BoltData } from "./types/bolts";
 import type { ActiveDockTab, AppSettings } from "./types/app";
+
+import type {
+  AppliedLoad,
+  BoltData,
+  BoltDesignation,
+  BoltThreadCondition,
+  BoltShearPlane,
+  BoltType,
+  SlipCriticalFayingSurface,
+  SlipCriticalHoleType,
+  UnitSystem,
+  BoltRenderSize,
+  BoltStrength,
+} from "./types/bolts";
 
 function CustomBoltPreviewDot({ x, y }: { x: number; y: number }) {
   return (
@@ -34,6 +47,29 @@ function CustomBoltPreviewDot({ x, y }: { x: number; y: number }) {
     </mesh>
   );
 }
+
+export type CurrentBoltData = {
+  label: string;
+  unitSystem: UnitSystem;
+  diameter: number;
+  area?: number;
+  renderSize: BoltRenderSize;
+
+  boltType: BoltType;
+  designation: BoltDesignation;
+  threadCondition: BoltThreadCondition;
+  shearPlane: BoltShearPlane;
+
+  fayingSurface: SlipCriticalFayingSurface;
+  mu: number;
+  holeType: SlipCriticalHoleType;
+
+  shearStrength?: BoltStrength;
+  slipCriticalStrength?: BoltStrength;
+  capacity?: number;
+  omega?: number;
+  phi?: number;
+};
 
 function App() {
   const [activeTab, setActiveTab] = useState<ActiveDockTab>("file");
@@ -57,7 +93,7 @@ function App() {
     showBoltForceLabels: true,
     showAppliedForceLabels: true,
     showIC: true,
-    autoRunAnalysis: false,
+    autoRunAnalysis: true,
   });
 
   const [settings, setSettings] = useState<AppSettings>({
@@ -68,7 +104,43 @@ function App() {
     designMethod: "LRFD",
   });
 
+  const [currentBoltData, setCurrentBoltData] = useState<CurrentBoltData>({
+    label: "3/4",
+    unitSystem: "imperial",
+    diameter: 0.75,
+    area: 0.442,
+    renderSize: {
+      diameter: 0.75,
+      headAcrossFlats: 1.125,
+      headHeight: 0.45,
+      shaftLength: 2,
+    },
+
+    boltType: "bearing",
+    designation: "Group A",
+    threadCondition: "N",
+    shearPlane: "single",
+
+    fayingSurface: "Class A",
+    mu: 0.3,
+    holeType: "STD/SSLT",
+
+    shearStrength: {
+      asd: 11.9,
+      lrfd: 17.9,
+    },
+    capacity: 17.9,
+    omega: 2.0,
+    phi: 0.75,
+  });
+
   const isDark = settings.theme === "dark";
+
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+
+  function getSceneImageDataUrl() {
+    return canvasRef.current?.toDataURL("image/png") ?? null;
+  }
 
   const [loads, setLoads] = useState<AppliedLoad[]>([
     {
@@ -99,6 +171,18 @@ function App() {
         headHeight: 0.45,
         shaftLength: 2,
       },
+      boltType: "bearing",
+      designation: "Group A",
+      threadCondition: "N",
+      shearPlane: "single",
+      area: 0.442,
+      shearStrength: {
+        asd: 11.9,
+        lrfd: 17.9,
+      },
+      capacity: 17.9,
+      omega: 2.0,
+      phi: 0.75,
       force: { fx: 10, fy: 5 },
     },
     {
@@ -114,7 +198,19 @@ function App() {
         headHeight: 0.45,
         shaftLength: 2,
       },
-      force: { fx: -7, fy: 4 },
+      boltType: "bearing",
+      designation: "Group A",
+      threadCondition: "N",
+      shearPlane: "single",
+      area: 0.442,
+      shearStrength: {
+        asd: 11.9,
+        lrfd: 17.9,
+      },
+      capacity: 17.9,
+      omega: 2.0,
+      phi: 0.75,
+      force: { fx: 10, fy: 5 },
     },
     {
       id: "B3",
@@ -129,7 +225,19 @@ function App() {
         headHeight: 0.45,
         shaftLength: 2,
       },
-      force: { fx: -8, fy: -3 },
+      boltType: "bearing",
+      designation: "Group A",
+      threadCondition: "N",
+      shearPlane: "single",
+      area: 0.442,
+      shearStrength: {
+        asd: 11.9,
+        lrfd: 17.9,
+      },
+      capacity: 17.9,
+      omega: 2.0,
+      phi: 0.75,
+      force: { fx: 10, fy: 5 },
     },
     {
       id: "B4",
@@ -144,7 +252,19 @@ function App() {
         headHeight: 0.45,
         shaftLength: 2,
       },
-      force: { fx: 5, fy: -9 },
+      boltType: "bearing",
+      designation: "Group A",
+      threadCondition: "N",
+      shearPlane: "single",
+      area: 0.442,
+      shearStrength: {
+        asd: 11.9,
+        lrfd: 17.9,
+      },
+      capacity: 17.9,
+      omega: 2.0,
+      phi: 0.75,
+      force: { fx: 10, fy: 5 },
     },
   ]);
 
@@ -240,6 +360,10 @@ function App() {
           setCustomBoltX={setCustomBoltX}
           customBoltY={customBoltY}
           setCustomBoltY={setCustomBoltY}
+          settings={settings}
+          setSettings={setSettings}
+          currentBoltData={currentBoltData}
+          setCurrentBoltData={setCurrentBoltData}
         />
       );
     }
@@ -250,18 +374,25 @@ function App() {
           loads={loads}
           setLoads={setLoads}
           selectedLoadIds={selectedLoadIds}
-          unitSystem={settings.unitSystem}
+          setSelectedLoadIds={setSelectedLoadIds}
         />
       );
     }
 
-    return (
-      <Results
-        result={analysisResult}
-        onRunAnalysis={runAnalysis}
-        unitSystem={settings.unitSystem}
-      />
-    );
+    if (activeTab === "results") {
+      return (
+        <Results
+          result={analysisResult}
+          loads={loads}
+          onRunAnalysis={runAnalysis}
+          unitSystem={settings.unitSystem}
+          settings={settings}
+          getSceneImageDataUrl={getSceneImageDataUrl}
+        />
+      );
+    }
+
+    return null;
   }
 
   return (
@@ -347,6 +478,8 @@ function App() {
         <ViewOptionsPanel
           viewOptions={viewOptions}
           setViewOptions={setViewOptions}
+          currentBoltData={currentBoltData}
+          
         />
 
         <Canvas
@@ -357,6 +490,10 @@ function App() {
             zoom: 40,
             near: 0.1,
             far: 1000,
+          }}
+          gl={{ preserveDrawingBuffer: true }}
+          onCreated={({ gl }) => {
+            canvasRef.current = gl.domElement;
           }}
         >
           <color attach="background" args={[isDark ? "#020617" : "#f8fafc"]} />

@@ -41,6 +41,10 @@ export type BoltDesignation = "Group A" | "Group B" | "Group C" | "A307";
 export type BoltThreadCondition = "N" | "X" | "not-applicable";
 export type BoltShearPlane = "single" | "double";
 
+export type BoltType = "bearing" | "slip-critical";
+export type SlipCriticalFayingSurface = "Class A" | "Class B";
+export type SlipCriticalHoleType = "STD/SSLT" | "OVS/SSLP" | "LSL";
+
 export type BoltStrength = {
   asd: number | null;
   lrfd: number | null;
@@ -67,4 +71,12 @@ export type BoltData = {
   force?: BoltForceVector;
   isSelected?: boolean;
   isHovered?: boolean;
+
+  boltType?: BoltType;
+  fayingSurface?: SlipCriticalFayingSurface;
+  mu?: number;
+  holeType?: SlipCriticalHoleType;
+  slipCriticalStrength?: BoltStrength;
+  omega?: number;
+  phi?: number;
 };
