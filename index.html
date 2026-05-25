@@ -2,12 +2,44 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+
+    <link rel="shortcut icon" type="image/png" href="/static/logo/favicon.ico" />
+
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>icybolts-app</title>
+
+    <title>ICyBolts | Bolt Group Analysis Tool</title>
+
+    <meta
+      name="description"
+      content="ICyBolts is an interactive bolt group analysis tool for structural engineers featuring instantaneous center analysis, AISC bolt design, slip-critical and bearing bolt calculations, and 3D visualization."
+    />
+
+    <meta
+      name="keywords"
+      content="bolt group analysis, instantaneous center method, AISC bolt design, slip critical bolts, bearing bolts, structural engineering, steel connection design, eccentric bolt group analysis, bolt force analysis, structural steel design, engineering software"
+    />
+
+    <meta name="author" content="Re-Tug" />
+
+    <!-- Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-QHHKT2DQKV"></script>
+
+    <script>
+      window.dataLayer = window.dataLayer || [];
+
+      function gtag() {
+        dataLayer.push(arguments);
+      }
+
+      gtag("js", new Date());
+
+      gtag("config", "G-QHHKT2DQKV");
+    </script>
   </head>
+
   <body>
     <div id="root"></div>
+
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
