@@ -53,7 +53,6 @@ export function brandt(
 
   if (DEBUG_BRANDT) {
     console.group("Brandt Method Debug");
-    console.log("BRANDT DEBUG STARTED");
     console.log("Input", {
       xloc,
       yloc,
@@ -100,7 +99,11 @@ export function brandt(
 
   const IC_initial: [number, number] = [anchor_x_bar + ax, anchor_y_bar + ay];
 
-  let [Rx, Ry, Mi, table] = icBrandt(IC_initial, xloc, yloc, Px, Py, Mo);
+  let IC_new: [number, number] = [...IC_initial];
+
+  let Mp = Mo;
+
+  let [Rx, Ry, Mi, table] = icBrandt(IC_new, xloc, yloc, Mp);
 
   let fxx = Px + Rx;
   let fyy = Py + Ry;
@@ -109,16 +112,14 @@ export function brandt(
   let ax_new = (-fyy * J) / (n * Mo);
   let ay_new = (fxx * J) / (n * Mo);
 
-  let IC_new: [number, number] = [...IC_initial];
-
-  let Cu = Math.abs(Mi / (Mo / loadScale));
+  let Cu = Math.abs(Mi / (Mp / loadScale));
 
   if (DEBUG_BRANDT) {
     console.log("Iteration 0 / Initial IC", {
       IC: IC_initial,
       Mi,
-      Mp_new: Mo,
-      Mp_unit: Mo / loadScale,
+      Mp,
+      Mp_unit: Mp / loadScale,
       Cu,
       Rx,
       Ry,
@@ -139,7 +140,9 @@ export function brandt(
     const Mp_new = momentAboutPoint(Px, Py, Mo, IC_new[0], IC_new[1]);
     const Mp_unit = Mp_new / loadScale;
 
-    [Rx, Ry, Mi, table] = icBrandt(IC_new, xloc, yloc, Px, Py, Mp_new);
+    Mp = Mp_new;
+
+    [Rx, Ry, Mi, table] = icBrandt(IC_new, xloc, yloc, Mp);
 
     fxx = Px + Rx;
     fyy = Py + Ry;
@@ -193,7 +196,7 @@ function momentAboutPoint(
   MoAboutOrigin: number,
   x: number,
   y: number
-) {
+): number {
   return MoAboutOrigin + Px * y - Py * x;
 }
 
@@ -201,8 +204,6 @@ function icBrandt(
   IC: [number, number],
   xloc: number[],
   yloc: number[],
-  Px: number,
-  Py: number,
   Mp: number
 ): [number, number, number, BrandtTableRow[]] {
   const m = Math;

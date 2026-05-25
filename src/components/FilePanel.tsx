@@ -34,107 +34,124 @@ export function FilePanel({ settings, setSettings }: FilePanelProps) {
         <h1 style={{ margin: 0, fontSize: 32, letterSpacing: "-0.04em" }}>
           File
         </h1>
+
         <p style={{ marginTop: 8, color: isDark ? "#94a3b8" : "#64748b" }}>
           Set up the ICyBolts project, units, design standard, and file storage.
         </p>
       </div>
 
       <section
-  style={{
-    padding: 16,
-    borderRadius: 18,
-    background: isDark ? "#111827" : "#f8fafc",
-    border: `1px solid ${isDark ? "#1e293b" : "#e5e7eb"}`,
-    display: "grid",
-    gap: 18,
-  }}
->
-  <h2 style={{ margin: 0, fontSize: 18 }}>
-    Project Settings
-  </h2>
-
-  <div
-    style={{
-      display: "grid",
-      gridTemplateColumns: "1fr 1fr",
-      gap: 16,
-    }}
-  >
-    <label style={{ display: "grid", gap: 6 }}>
-      <span>Theme</span>
-
-      <select
-        style={inputStyle}
-        value={settings.theme}
-        onChange={(e) =>
-          updateSetting(
-            "theme",
-            e.target.value as AppSettings["theme"]
-          )
-        }
+        style={{
+          padding: 16,
+          borderRadius: 18,
+          background: isDark ? "#111827" : "#f8fafc",
+          border: `1px solid ${isDark ? "#1e293b" : "#e5e7eb"}`,
+          display: "grid",
+          gap: 18,
+        }}
       >
-        <option value="dark">Dark</option>
-        <option value="light">Light</option>
-      </select>
-    </label>
+        <h2 style={{ margin: 0, fontSize: 18 }}>Project Settings</h2>
 
-    <label style={{ display: "grid", gap: 6 }}>
-      <span>Design Code</span>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr",
+            gap: 16,
+          }}
+        >
+          <label style={{ display: "grid", gap: 6 }}>
+            <span>Theme</span>
 
-      <select
-        style={inputStyle}
-        value={settings.designCode}
-        onChange={(e) =>
-          updateSetting(
-            "designCode",
-            e.target.value as AppSettings["designCode"]
-          )
-        }
-      >
-        <option value="AISC">AISC</option>
-        <option value="Eurocode">Eurocode</option>
-      </select>
-    </label>
+            <select
+              style={inputStyle}
+              value={settings.theme}
+              onChange={(e) =>
+                updateSetting(
+                  "theme",
+                  e.target.value as AppSettings["theme"]
+                )
+              }
+            >
+              <option value="dark">Dark</option>
+              <option value="light">Light</option>
+            </select>
+          </label>
 
-    <label style={{ display: "grid", gap: 6 }}>
-      <span>Bolt Type</span>
+          <label style={{ display: "grid", gap: 6 }}>
+            <span>Design Code</span>
 
-      <select
-        style={inputStyle}
-        value={settings.boltType}
-        onChange={(e) =>
-          updateSetting(
-            "boltType",
-            e.target.value as AppSettings["boltType"]
-          )
-        }
-      >
-        <option value="bearing">Bearing</option>
-        <option value="slip-critical">
-          Slip Critical
-        </option>
-      </select>
-    </label>
+            <select
+              style={inputStyle}
+              value={settings.designCode}
+              onChange={(e) =>
+                updateSetting(
+                  "designCode",
+                  e.target.value as AppSettings["designCode"]
+                )
+              }
+            >
+              <option value="AISC">AISC</option>
+              <option value="Eurocode">Eurocode</option>
+            </select>
+          </label>
 
-    <label style={{ display: "grid", gap: 6 }}>
-      <span>Units</span>
+          {settings.designCode === "AISC" && (
+            <label style={{ display: "grid", gap: 6 }}>
+              <span>AISC Design Method</span>
 
-      <select
-        style={inputStyle}
-        value={settings.unitSystem}
-        onChange={(e) =>
-          updateSetting(
-            "unitSystem",
-            e.target.value as AppSettings["unitSystem"]
-          )
-        }
-      >
-        <option value="imperial">Imperial</option>
-        <option value="metric">Metric</option>
-      </select>
-    </label>
-  </div>
-</section>
+              <select
+                style={inputStyle}
+                value={settings.designMethod}
+                onChange={(e) =>
+                  updateSetting(
+                    "designMethod",
+                    e.target.value as AppSettings["designMethod"]
+                  )
+                }
+              >
+                <option value="LRFD">LRFD</option>
+                <option value="ASD">ASD</option>
+              </select>
+            </label>
+          )}
+
+          <label style={{ display: "grid", gap: 6 }}>
+            <span>Bolt Type</span>
+
+            <select
+              style={inputStyle}
+              value={settings.boltType}
+              onChange={(e) =>
+                updateSetting(
+                  "boltType",
+                  e.target.value as AppSettings["boltType"]
+                )
+              }
+            >
+              <option value="bearing">Bearing</option>
+              <option value="slip-critical">Slip Critical</option>
+            </select>
+          </label>
+
+          <label style={{ display: "grid", gap: 6 }}>
+            <span>Units</span>
+
+            <select
+              style={inputStyle}
+              value={settings.unitSystem}
+              onChange={(e) =>
+                updateSetting(
+                  "unitSystem",
+                  e.target.value as AppSettings["unitSystem"]
+                )
+              }
+            >
+              <option value="imperial">Imperial</option>
+              <option value="metric">Metric</option>
+            </select>
+          </label>
+        </div>
+      </section>
 
       <section
         style={{

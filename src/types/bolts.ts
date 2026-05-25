@@ -37,30 +37,34 @@ export type BoltRenderSize = {
   shaftLength: number;
 };
 
+export type BoltDesignation = "Group A" | "Group B" | "Group C" | "A307";
+export type BoltThreadCondition = "N" | "X" | "not-applicable";
+export type BoltShearPlane = "single" | "double";
+
+export type BoltStrength = {
+  asd: number | null;
+  lrfd: number | null;
+};
+
+
 export type BoltData = {
   id: string;
   label: string;
-
-  // Location in bolt group model coordinates
   x: number;
   y: number;
   z?: number;
-
   unitSystem: UnitSystem;
-
-  // Nominal bolt diameter
   diameter: number;
-
-  // Values used directly for rendering
+  area?: number;
   renderSize: BoltRenderSize;
 
-  // Optional design / analysis data
+  designation?: BoltDesignation;
+  threadCondition?: BoltThreadCondition;
+  shearPlane?: BoltShearPlane;
+  shearStrength?: BoltStrength;
   capacity?: number;
 
-  // Result force vector from IC / Brandt analysis
   force?: BoltForceVector;
-
-  // For future selection/highlighting
   isSelected?: boolean;
   isHovered?: boolean;
 };

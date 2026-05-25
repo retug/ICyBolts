@@ -65,6 +65,7 @@ function App() {
     boltType: "bearing",
     unitSystem: "imperial",
     theme: "dark",
+    designMethod: "LRFD",
   });
 
   const isDark = settings.theme === "dark";

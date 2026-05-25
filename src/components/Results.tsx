@@ -15,6 +15,10 @@ export function Results({ result, onRunAnalysis, unitSystem }: ResultsProps) {
   const momentUnit = unitSystem === "metric" ? "kN-mm" : "kip-in";
   const lengthUnit = unitSystem === "metric" ? "mm" : "in";
 
+  const maxBoltDcr = result
+    ? getMaxBoltDcr(result)
+    : null;
+
   function formatForce(value: number) {
     const displayValue = unitSystem === "metric" ? value * KIP_TO_KN : value;
     return `${displayValue.toFixed(3)} ${forceUnit}`;
@@ -58,6 +62,40 @@ export function Results({ result, onRunAnalysis, unitSystem }: ResultsProps) {
       {result && (
         <>
           <section style={cardStyle}>
+            <h3 style={sectionTitleStyle}>Bolt Check Summary</h3>
+
+            <ResultRow
+              label="Max Bolt DCR"
+              value={maxBoltDcr === null ? "N/A" : maxBoltDcr.toFixed(3)}
+              valueColor={
+                maxBoltDcr === null
+                  ? "#64748b"
+                  : maxBoltDcr <= 1
+                  ? "#15803d"
+                  : "#b91c1c"
+              }
+            />
+
+            <ResultRow
+              label="Status"
+              value={
+                maxBoltDcr === null
+                  ? "No bolt capacity available"
+                  : maxBoltDcr <= 1
+                  ? "OK"
+                  : "NG"
+              }
+              valueColor={
+                maxBoltDcr === null
+                  ? "#64748b"
+                  : maxBoltDcr <= 1
+                  ? "#15803d"
+                  : "#b91c1c"
+              }
+            />
+          </section>
+
+          <section style={cardStyle}>
             <h3 style={sectionTitleStyle}>External Forces Applied</h3>
 
             <ResultRow label="ΣFx" value={formatForce(result.externalForces.fx)} />
@@ -93,7 +131,40 @@ export function Results({ result, onRunAnalysis, unitSystem }: ResultsProps) {
   );
 }
 
-function ResultRow({ label, value }: { label: string; value: string }) {
+function getMaxBoltDcr(result: BoltAnalysisResult): number | null {
+  const dcrs = result.bolts
+    .map((bolt) => {
+      const demand = bolt.force?.magnitude ?? 0;
+      const capacity =
+        bolt.capacity ??
+        bolt.shearStrength?.lrfd ??
+        bolt.shearStrength?.asd ??
+        null;
+
+      if (capacity === null || capacity <= 0) {
+        return null;
+      }
+
+      return demand / capacity;
+    })
+    .filter((dcr): dcr is number => dcr !== null && Number.isFinite(dcr));
+
+  if (dcrs.length === 0) {
+    return null;
+  }
+
+  return Math.max(...dcrs);
+}
+
+function ResultRow({
+  label,
+  value,
+  valueColor = "#111827",
+}: {
+  label: string;
+  value: string;
+  valueColor?: string;
+}) {
   return (
     <div
       style={{
@@ -106,7 +177,7 @@ function ResultRow({ label, value }: { label: string; value: string }) {
       }}
     >
       <span style={{ color: "#334155", fontWeight: 800 }}>{label}</span>
-      <span style={{ color: "#111827", fontWeight: 700 }}>{value}</span>
+      <span style={{ color: valueColor, fontWeight: 800 }}>{value}</span>
     </div>
   );
 }

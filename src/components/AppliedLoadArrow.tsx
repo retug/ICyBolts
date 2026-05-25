@@ -162,10 +162,15 @@ function MomentArrow({
         loadId: load.id,
       }}
     >
-      <line geometry={geometry}>
-        <lineBasicMaterial color={color} linewidth={2} />
-      </line>
-
+      <primitive
+        object={new THREE.Line(
+          geometry,
+          new THREE.LineBasicMaterial({
+            color,
+            linewidth: 2,
+          })
+        )}
+      />
       <arrowHelper
         args={[
           tangent,
