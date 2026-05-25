@@ -6,6 +6,7 @@ import type {
   BoltDesignation,
   BoltShearPlane,
   BoltThreadCondition,
+  BoltType,
 } from "../types/bolts";
 
 import {
@@ -60,6 +61,7 @@ export function BoltPanel({
     shearPlane,
     fayingSurface,
     holeType,
+    boltType = "bearing",
   } = currentBoltData;
 
   const selectedBolts = bolts.filter((bolt) =>
@@ -89,7 +91,7 @@ export function BoltPanel({
     nextShearPlane = shearPlane,
     nextFayingSurface = fayingSurface,
     nextHoleType = holeType,
-    nextBoltType = settings.boltType,
+    nextBoltType = boltType,
   }: {
     diameterLabel: string;
     nextDesignation?: BoltDesignation;
@@ -97,7 +99,7 @@ export function BoltPanel({
     nextShearPlane?: BoltShearPlane;
     nextFayingSurface?: SlipCriticalFayingSurface;
     nextHoleType?: SlipCriticalHoleType;
-    nextBoltType?: AppSettings["boltType"];
+    nextBoltType?: BoltType;
   }) {
     const tc =
       nextDesignation === "A307" ? "not-applicable" : nextThreadCondition;
@@ -172,7 +174,7 @@ export function BoltPanel({
     nextShearPlane = shearPlane,
     nextFayingSurface = fayingSurface,
     nextHoleType = holeType,
-    nextBoltType = settings.boltType
+    nextBoltType = boltType
   ) {
     const currentPatch = getDesignPatch({
       diameterLabel: currentBoltData.label,
@@ -316,11 +318,9 @@ export function BoltPanel({
           <span>Bolt Type</span>
           <select
             style={inputStyle}
-            value={settings.boltType}
+            value={boltType}
             onChange={(e) => {
-              const value = e.target.value as AppSettings["boltType"];
-
-              updateSetting("boltType", value);
+              const value = e.target.value as BoltType;
 
               setCurrentBoltData((prev) => ({
                 ...prev,
@@ -342,7 +342,7 @@ export function BoltPanel({
           </select>
         </label>
 
-        {settings.boltType === "slip-critical" && (
+        {boltType === "slip-critical" && (
           <div
             style={{
               display: "grid",

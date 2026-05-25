@@ -103,6 +103,10 @@ export function printBoltReport({
 
   const firstBolt = result.bolts[0];
 
+  const boltType = firstBolt?.boltType ?? "bearing";
+  const phiFactor = firstBolt?.phi ?? (boltType === "bearing" ? 0.75 : null);
+  const omegaFactor = firstBolt?.omega ?? (boltType === "bearing" ? 2.0 : null);
+
   const boltRows = result.bolts
     .map((bolt, index) => {
       const capacity = getBoltCapacity(bolt);
@@ -305,7 +309,7 @@ export function printBoltReport({
     <div class="grid two">
       <div class="card">
         <div class="label">Bolt Type</div>
-        <div class="value">${escapeHtml(settings.boltType)}</div>
+        <div class="value">${escapeHtml(boltType)}</div>
       </div>
 
       <div class="card">
@@ -316,14 +320,14 @@ export function printBoltReport({
       <div class="card">
         <div class="label">Phi Factor</div>
         <div class="value">${
-          settings.boltType === "bearing" ? "0.75" : "See slip-critical settings"
+          boltType === "bearing" ? "0.75" : "See slip-critical settings"
         }</div>
       </div>
 
       <div class="card">
         <div class="label">Omega Factor</div>
         <div class="value">${
-          settings.boltType === "bearing" ? "2.00" : "See slip-critical settings"
+          boltType === "bearing" ? "2.00" : "See slip-critical settings"
         }</div>
       </div>
     </div>
