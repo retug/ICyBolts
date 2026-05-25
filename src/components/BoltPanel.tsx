@@ -46,7 +46,7 @@ export function BoltPanel({
   customBoltY,
   setCustomBoltY,
   settings,
-  setSettings,
+  // setSettings,
   currentBoltData,
   setCurrentBoltData,
 }: BoltPanelProps) {
@@ -74,15 +74,15 @@ export function BoltPanel({
     boltSizeOptions.find((b) => b.label === "3/4") ??
     boltSizeOptions[0];
 
-  function updateSetting<K extends keyof AppSettings>(
-    key: K,
-    value: AppSettings[K]
-  ) {
-    setSettings((prev) => ({
-      ...prev,
-      [key]: value,
-    }));
-  }
+  // function updateSetting<K extends keyof AppSettings>(
+  //   key: K,
+  //   value: AppSettings[K]
+  // ) {
+  //   setSettings((prev) => ({
+  //     ...prev,
+  //     [key]: value,
+  //   }));
+  // }
 
   function getDesignPatch({
     diameterLabel,

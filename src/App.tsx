@@ -418,7 +418,7 @@ function App() {
         <Results
           result={analysisResult}
           loads={loads}
-          onRunAnalysis={runAnalysis}
+          // onRunAnalysis={runAnalysis}
           unitSystem={settings.unitSystem}
           settings={settings}
           getSceneImageDataUrl={getSceneImageDataUrl}

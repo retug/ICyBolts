@@ -7,7 +7,7 @@ import type { AppSettings } from "../types/app";
 type ResultsProps = {
   result: BoltAnalysisResult | null;
   loads: AppliedLoad[];
-  onRunAnalysis: () => void;
+//   onRunAnalysis: () => void;
   unitSystem: UnitSystem;
   settings: AppSettings;
   getSceneImageDataUrl?: () => string | null;
@@ -19,7 +19,7 @@ const KIP_IN_TO_KN_MM = 112.9848290276;
 export function Results({
   result,
   loads,
-  onRunAnalysis,
+  
   unitSystem,
   settings,
   getSceneImageDataUrl,
@@ -653,14 +653,14 @@ const dataValueStyle: CSSProperties = {
   overflowWrap: "anywhere",
 };
 
-const runButtonStyle: CSSProperties = {
-  padding: "11px 15px",
-  borderRadius: 14,
-  border: "1px solid rgba(147,197,253,0.55)",
-  background: "linear-gradient(180deg, #2563eb, #1d4ed8)",
-  color: "white",
-  fontWeight: 900,
-  cursor: "pointer",
-  boxShadow: "0 12px 28px rgba(37, 99, 235, 0.35)",
-  whiteSpace: "nowrap",
-};
+// const runButtonStyle: CSSProperties = {
+//   padding: "11px 15px",
+//   borderRadius: 14,
+//   border: "1px solid rgba(147,197,253,0.55)",
+//   background: "linear-gradient(180deg, #2563eb, #1d4ed8)",
+//   color: "white",
+//   fontWeight: 900,
+//   cursor: "pointer",
+//   boxShadow: "0 12px 28px rgba(37, 99, 235, 0.35)",
+//   whiteSpace: "nowrap",
+// };
