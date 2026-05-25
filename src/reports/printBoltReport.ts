@@ -320,14 +320,14 @@ export function printBoltReport({
       <div class="card">
         <div class="label">Phi Factor</div>
         <div class="value">${
-          boltType === "bearing" ? "0.75" : "See slip-critical settings"
+          phiFactor === null ? "N/A" : fmt(phiFactor, 2)
         }</div>
       </div>
 
       <div class="card">
         <div class="label">Omega Factor</div>
         <div class="value">${
-          boltType === "bearing" ? "2.00" : "See slip-critical settings"
+          omegaFactor === null ? "N/A" : fmt(omegaFactor, 2)
         }</div>
       </div>
     </div>
