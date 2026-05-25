@@ -7,7 +7,6 @@ import type { AppSettings } from "../types/app";
 type ResultsProps = {
   result: BoltAnalysisResult | null;
   loads: AppliedLoad[];
-//   onRunAnalysis: () => void;
   unitSystem: UnitSystem;
   settings: AppSettings;
   getSceneImageDataUrl?: () => string | null;
@@ -19,11 +18,13 @@ const KIP_IN_TO_KN_MM = 112.9848290276;
 export function Results({
   result,
   loads,
-  
   unitSystem,
   settings,
   getSceneImageDataUrl,
 }: ResultsProps) {
+  const isDark = settings.theme === "dark";
+  const styles = getStyles(isDark);
+
   const forceUnit = unitSystem === "metric" ? "kN" : "kips";
   const momentUnit = unitSystem === "metric" ? "kN-mm" : "kip-in";
   const lengthUnit = unitSystem === "metric" ? "mm" : "in";
@@ -41,7 +42,7 @@ export function Results({
     maxBoltDcr === null ? "No Capacity" : maxBoltDcr <= 1 ? "OK" : "No Good";
 
   const statusColor =
-    maxBoltDcr === null ? "#64748b" : maxBoltDcr <= 1 ? "#16a34a" : "#dc2626";
+    maxBoltDcr === null ? "#94a3b8" : maxBoltDcr <= 1 ? "#22c55e" : "#ef4444";
 
   function formatForce(value: number) {
     const displayValue = unitSystem === "metric" ? value * KIP_TO_KN : value;
@@ -66,42 +67,45 @@ export function Results({
   }
 
   return (
-    <div style={pageStyle}>
-      <div style={headerStyle}>
+    <div style={styles.page}>
+      <div style={styles.header}>
         <div>
-          <h2 style={titleStyle}>Results</h2>
+          <h2 style={styles.pageTitle}>Results</h2>
 
-          <p style={subtitleStyle}>
+          <p style={styles.pageSubtitle}>
             Review bolt group capacity, force equilibrium, and instantaneous
             center output.
           </p>
         </div>
-        <div style={{ display: "flex", gap: 10 }}>
-            <button
-                style={printButtonStyle}
-                disabled={!result}
-                onClick={() => {
-                if (!result) return;
 
-                printBoltReport({
-                    result,
-                    loads,
-                    settings,
-                    unitSystem,
-                    sceneImageDataUrl: getSceneImageDataUrl?.() ?? null,
-                });
-                }}
-            >
-                Print PDF
-            </button>
-        </div>
+        <button
+          style={{
+            ...styles.printButton,
+            opacity: !result ? 0.45 : 1,
+            cursor: !result ? "not-allowed" : "pointer",
+          }}
+          disabled={!result}
+          onClick={() => {
+            if (!result) return;
+
+            printBoltReport({
+              result,
+              loads,
+              settings,
+              unitSystem,
+              sceneImageDataUrl: getSceneImageDataUrl?.() ?? null,
+            });
+          }}
+        >
+          Print PDF
+        </button>
       </div>
 
       {!result && (
-        <section style={cardStyle}>
-          <h3 style={sectionTitleStyle}>No Results Yet</h3>
+        <section style={styles.card}>
+          <h3 style={styles.sectionTitle}>No Results Yet</h3>
 
-          <p style={mutedTextStyle}>
+          <p style={styles.emptyText}>
             Click Run Analysis to calculate the bolt group response.
           </p>
         </section>
@@ -109,14 +113,16 @@ export function Results({
 
       {result && (
         <>
-          <section style={summaryCardStyle}>
+          <section style={styles.summaryGrid}>
             <MetricCard
+              styles={styles}
               label="Bolt Group Coefficient"
               value={result.Cu.toFixed(4)}
               sublabel="C"
             />
 
             <MetricCard
+              styles={styles}
               label="Max Bolt DCR"
               value={maxBoltDcr === null ? "N/A" : maxBoltDcr.toFixed(3)}
               sublabel={
@@ -130,6 +136,7 @@ export function Results({
             />
 
             <MetricCard
+              styles={styles}
               label="Status"
               value={status}
               sublabel={
@@ -143,26 +150,30 @@ export function Results({
             />
           </section>
 
-          <section style={cardStyle}>
+          <section style={styles.card}>
             <SectionHeader
+              styles={styles}
               title="Bolt Input Information"
               description="Selected bolt configuration and design capacities used for the check."
             />
 
             {inputBolt?.boltType === "slip-critical" ? (
               <>
-                <div style={dataGridStyle}>
+                <div style={styles.dataGrid}>
                   <DataItem
+                    styles={styles}
                     label="Bolt Diameter"
                     value={formatBoltDiameter(inputBolt?.label)}
                   />
 
                   <DataItem
+                    styles={styles}
                     label="Bolt Grade"
                     value={inputBolt?.designation ?? "N/A"}
                   />
 
                   <DataItem
+                    styles={styles}
                     label="Faying Surface"
                     value={
                       inputBolt?.fayingSurface
@@ -176,30 +187,35 @@ export function Results({
                   />
 
                   <DataItem
+                    styles={styles}
                     label="Loading"
                     value={formatShearPlane(inputBolt?.shearPlane)}
                   />
 
                   <DataItem
+                    styles={styles}
                     label="Hole Type"
                     value={inputBolt?.holeType ?? "N/A"}
                   />
 
-                  <DataItem label="Bolt Type" value="Slip Critical" />
+                  <DataItem styles={styles} label="Bolt Type" value="Slip Critical" />
                 </div>
 
-                <div style={capacityStripStyle}>
+                <div style={styles.capacityStrip}>
                   <DataItem
+                    styles={styles}
                     label="ASD Capacity"
                     value={formatCapacity(inputBolt?.shearStrength?.asd)}
                   />
 
                   <DataItem
+                    styles={styles}
                     label="LRFD Capacity"
                     value={formatCapacity(inputBolt?.shearStrength?.lrfd)}
                   />
 
                   <DataItem
+                    styles={styles}
                     label="Active Method"
                     value={settings.designMethod}
                   />
@@ -207,42 +223,49 @@ export function Results({
               </>
             ) : (
               <>
-                <div style={dataGridStyle}>
+                <div style={styles.dataGrid}>
                   <DataItem
+                    styles={styles}
                     label="Bolt Diameter"
                     value={formatBoltDiameter(inputBolt?.label)}
                   />
 
                   <DataItem
+                    styles={styles}
                     label="Bolt Group"
                     value={inputBolt?.designation ?? "N/A"}
                   />
 
                   <DataItem
+                    styles={styles}
                     label="Thread Condition"
                     value={formatThreadCondition(inputBolt?.threadCondition)}
                   />
 
                   <DataItem
+                    styles={styles}
                     label="Loading"
                     value={formatShearPlane(inputBolt?.shearPlane)}
                   />
 
-                  <DataItem label="Bolt Type" value="Bearing" />
+                  <DataItem styles={styles} label="Bolt Type" value="Bearing" />
                 </div>
 
-                <div style={capacityStripStyle}>
+                <div style={styles.capacityStrip}>
                   <DataItem
+                    styles={styles}
                     label="ASD Capacity"
                     value={formatCapacity(inputBolt?.shearStrength?.asd)}
                   />
 
                   <DataItem
+                    styles={styles}
                     label="LRFD Capacity"
                     value={formatCapacity(inputBolt?.shearStrength?.lrfd)}
                   />
 
                   <DataItem
+                    styles={styles}
                     label="Active Method"
                     value={settings.designMethod}
                   />
@@ -251,19 +274,22 @@ export function Results({
             )}
           </section>
 
-          <section style={cardStyle}>
+          <section style={styles.card}>
             <SectionHeader
+              styles={styles}
               title="Bolt Check Summary"
               description="Demand and capacity for the governing bolt force."
             />
 
-            <div style={dataGridStyle}>
+            <div style={styles.dataGrid}>
               <DataItem
+                styles={styles}
                 label="Max Bolt Shear"
                 value={formatForce(maxBolt?.force?.magnitude ?? 0)}
               />
 
               <DataItem
+                styles={styles}
                 label="Controlling Capacity"
                 value={
                   controllingCheck
@@ -273,65 +299,61 @@ export function Results({
               />
 
               <DataItem
+                styles={styles}
                 label="Max Bolt DCR"
                 value={maxBoltDcr === null ? "N/A" : maxBoltDcr.toFixed(3)}
                 valueColor={statusColor}
               />
 
-              <DataItem label="Status" value={status} valueColor={statusColor} />
+              <DataItem
+                styles={styles}
+                label="Status"
+                value={status}
+                valueColor={statusColor}
+              />
             </div>
           </section>
 
-          <section style={cardStyle}>
+          <section style={styles.card}>
             <SectionHeader
+              styles={styles}
               title="External Forces Applied"
               description="Resultant force and moment applied to the bolt group."
             />
 
-            <div style={threeColumnRowStyle}>
-              <DataItem label="ΣFx" value={formatForce(result.externalForces.fx)} />
-
-              <DataItem label="ΣFy" value={formatForce(result.externalForces.fy)} />
-
-              <DataItem
-                label="ΣMo"
-                value={formatMoment(result.externalForces.moment)}
-              />
+            <div style={styles.threeColumnGrid}>
+              <DataItem styles={styles} label="ΣFx" value={formatForce(result.externalForces.fx)} />
+              <DataItem styles={styles} label="ΣFy" value={formatForce(result.externalForces.fy)} />
+              <DataItem styles={styles} label="ΣMo" value={formatMoment(result.externalForces.moment)} />
             </div>
           </section>
 
-          <section style={cardStyle}>
+          <section style={styles.card}>
             <SectionHeader
+              styles={styles}
               title="Summation of Bolt Forces"
               description="Internal bolt force resultants from the IC analysis."
             />
 
-            <div style={threeColumnRowStyle}>
-              <DataItem label="ΣFx" value={formatForce(result.boltForces.fx)} />
-
-              <DataItem label="ΣFy" value={formatForce(result.boltForces.fy)} />
-
-              <DataItem
-                label="ΣMo"
-                value={formatMoment(result.boltForces.moment)}
-              />
+            <div style={styles.threeColumnGrid}>
+              <DataItem styles={styles} label="ΣFx" value={formatForce(result.boltForces.fx)} />
+              <DataItem styles={styles} label="ΣFy" value={formatForce(result.boltForces.fy)} />
+              <DataItem styles={styles} label="ΣMo" value={formatMoment(result.boltForces.moment)} />
             </div>
           </section>
 
-          <section style={cardStyle}>
+          <section style={styles.card}>
             <SectionHeader
+              styles={styles}
               title="Instantaneous Center"
               description="Calculated instantaneous center and Brandt coefficient."
             />
 
-            <div style={fourColumnRowStyle}>
-              <DataItem label="IC X" value={formatLength(result.IC[0])} />
-
-              <DataItem label="IC Y" value={formatLength(result.IC[1])} />
-
-              <DataItem label="C" value={result.Cu.toFixed(4)} />
-
-              <DataItem label="Mi" value={result.Mi.toFixed(4)} />
+            <div style={styles.fourColumnGrid}>
+              <DataItem styles={styles} label="IC X" value={formatLength(result.IC[0])} />
+              <DataItem styles={styles} label="IC Y" value={formatLength(result.IC[1])} />
+              <DataItem styles={styles} label="C" value={result.Cu.toFixed(4)} />
+              <DataItem styles={styles} label="Mi" value={result.Mi.toFixed(4)} />
             </div>
           </section>
         </>
@@ -441,226 +463,237 @@ function formatShearPlane(shearPlane: string | undefined) {
 }
 
 function SectionHeader({
+  styles,
   title,
   description,
 }: {
+  styles: ReturnType<typeof getStyles>;
   title: string;
   description?: string;
 }) {
   return (
     <div style={{ display: "grid", gap: 4 }}>
-      <h3 style={sectionTitleStyle}>{title}</h3>
-
-      {description && <p style={mutedTextStyle}>{description}</p>}
+      <h3 style={styles.sectionTitle}>{title}</h3>
+      {description && <p style={styles.mutedText}>{description}</p>}
     </div>
   );
 }
 
 function MetricCard({
+  styles,
   label,
   value,
   sublabel,
-  valueColor = "#0f172a",
+  valueColor,
 }: {
+  styles: ReturnType<typeof getStyles>;
   label: string;
   value: string;
   sublabel?: string;
   valueColor?: string;
 }) {
   return (
-    <div style={metricCardStyle}>
-      <div style={metricLabelStyle}>{label}</div>
+    <div style={styles.metricCard}>
+      <div style={styles.metricLabel}>{label}</div>
 
-      <div style={{ ...metricValueStyle, color: valueColor }}>{value}</div>
+      <div style={{ ...styles.metricValue, color: valueColor ?? styles.strongValue.color }}>
+        {value}
+      </div>
 
-      {sublabel && <div style={metricSubLabelStyle}>{sublabel}</div>}
+      {sublabel && <div style={styles.metricSubLabel}>{sublabel}</div>}
     </div>
   );
 }
 
 function DataItem({
+  styles,
   label,
   value,
-  valueColor = "#0f172a",
+  valueColor,
 }: {
+  styles: ReturnType<typeof getStyles>;
   label: string;
   value: string;
   valueColor?: string;
 }) {
   return (
-    <div style={dataItemStyle}>
-      <div style={dataLabelStyle}>{label}</div>
+    <div style={styles.dataItem}>
+      <div style={styles.dataLabel}>{label}</div>
 
-      <div style={{ ...dataValueStyle, color: valueColor }}>{value}</div>
+      <div style={{ ...styles.dataValue, color: valueColor ?? styles.dataValue.color }}>
+        {value}
+      </div>
     </div>
   );
 }
 
-const pageStyle: CSSProperties = {
-  display: "grid",
-  gap: 18,
-};
+function getStyles(isDark: boolean): Record<string, CSSProperties> {
+  return {
+    page: {
+      display: "grid",
+      gap: 18,
+    },
 
-const printButtonStyle: CSSProperties = {
-  padding: "11px 15px",
-  borderRadius: 14,
-  border: "1px solid #cbd5e1",
-  background: "#ffffff",
-  color: "#0f172a",
-  fontWeight: 900,
-  cursor: "pointer",
-  boxShadow: "0 12px 28px rgba(15, 23, 42, 0.12)",
-  whiteSpace: "nowrap",
-};
+    header: {
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "flex-start",
+      gap: 14,
+    },
 
-const headerStyle: CSSProperties = {
-  display: "flex",
-  justifyContent: "space-between",
-  alignItems: "flex-start",
-  gap: 14,
-};
+    pageTitle: {
+      margin: 0,
+      fontSize: 28,
+      color: isDark ? "#f8fafc" : "#111827",
+      letterSpacing: "-0.04em",
+    },
 
-const titleStyle: CSSProperties = {
-  margin: 0,
-  fontSize: 30,
-  letterSpacing: "-0.04em",
-  color: "#f8fafc",
-};
+    pageSubtitle: {
+      marginTop: 8,
+      marginBottom: 0,
+      color: isDark ? "#94a3b8" : "#64748b",
+      lineHeight: 1.45,
+      fontSize: 14,
+    },
 
-const subtitleStyle: CSSProperties = {
-  marginTop: 6,
-  marginBottom: 0,
-  color: "#94a3b8",
-  lineHeight: 1.45,
-  fontSize: 13,
-};
+    printButton: {
+      padding: "11px 15px",
+      borderRadius: 12,
+      border: `1px solid ${isDark ? "#334155" : "#cbd5e1"}`,
+      background: isDark ? "#020617" : "#ffffff",
+      color: isDark ? "#f8fafc" : "#111827",
+      fontWeight: 900,
+      whiteSpace: "nowrap",
+      boxShadow: isDark ? "none" : "0 8px 22px rgba(15, 23, 42, 0.08)",
+    },
 
-const cardStyle: CSSProperties = {
-  padding: 16,
-  borderRadius: 18,
-  background:
-    "linear-gradient(180deg, rgba(248,250,252,0.98), rgba(241,245,249,0.96))",
-  border: "1px solid rgba(203,213,225,0.9)",
-  boxShadow: "0 14px 35px rgba(15, 23, 42, 0.12)",
-  display: "grid",
-  gap: 14,
-};
+    card: {
+      padding: 16,
+      borderRadius: 18,
+      background: isDark ? "#111827" : "#f8fafc",
+      border: `1px solid ${isDark ? "#1e293b" : "#e5e7eb"}`,
+      display: "grid",
+      gap: 14,
+      boxShadow: isDark ? "none" : "0 8px 22px rgba(15, 23, 42, 0.06)",
+    },
 
-const summaryCardStyle: CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
-  gap: 12,
-};
+    summaryGrid: {
+      display: "grid",
+      gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+      gap: 12,
+    },
 
-const metricCardStyle: CSSProperties = {
-  padding: 16,
-  borderRadius: 18,
-  background:
-    "linear-gradient(180deg, rgba(255,255,255,1), rgba(248,250,252,1))",
-  border: "1px solid #e2e8f0",
-  boxShadow: "0 12px 30px rgba(15, 23, 42, 0.10)",
-  display: "grid",
-  gap: 8,
-  minHeight: 112,
-  alignContent: "center",
-};
+    metricCard: {
+      padding: 16,
+      borderRadius: 18,
+      background: isDark ? "#111827" : "#f8fafc",
+      border: `1px solid ${isDark ? "#1e293b" : "#e5e7eb"}`,
+      display: "grid",
+      gap: 8,
+      minHeight: 112,
+      alignContent: "center",
+      boxShadow: isDark ? "none" : "0 8px 22px rgba(15, 23, 42, 0.06)",
+    },
 
-const metricLabelStyle: CSSProperties = {
-  color: "#64748b",
-  fontSize: 12,
-  fontWeight: 800,
-  textTransform: "uppercase",
-  letterSpacing: "0.06em",
-};
+    metricLabel: {
+      color: isDark ? "#93c5fd" : "#334155",
+      fontSize: 11,
+      fontWeight: 800,
+      textTransform: "uppercase",
+      letterSpacing: "0.06em",
+    },
 
-const metricValueStyle: CSSProperties = {
-  fontSize: 28,
-  lineHeight: 1.05,
-  fontWeight: 900,
-  letterSpacing: "-0.04em",
-};
+    metricValue: {
+      color: isDark ? "#f8fafc" : "#111827",
+      fontSize: 28,
+      lineHeight: 1.05,
+      fontWeight: 900,
+      letterSpacing: "-0.04em",
+    },
 
-const metricSubLabelStyle: CSSProperties = {
-  color: "#64748b",
-  fontSize: 12,
-  fontWeight: 700,
-};
+    strongValue: {
+      color: isDark ? "#f8fafc" : "#111827",
+    },
 
-const sectionTitleStyle: CSSProperties = {
-  margin: 0,
-  fontSize: 18,
-  color: "#0f172a",
-  letterSpacing: "-0.02em",
-};
+    metricSubLabel: {
+      color: isDark ? "#94a3b8" : "#64748b",
+      fontSize: 12,
+      fontWeight: 700,
+      lineHeight: 1.35,
+    },
 
-const mutedTextStyle: CSSProperties = {
-  margin: 0,
-  color: "#64748b",
-  fontSize: 13,
-  lineHeight: 1.45,
-};
+    sectionTitle: {
+      margin: 0,
+      fontSize: 18,
+      color: isDark ? "#f8fafc" : "#111827",
+      fontWeight: 800,
+      letterSpacing: "-0.02em",
+    },
 
-const dataGridStyle: CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-  gap: 10,
-};
+    mutedText: {
+      margin: 0,
+      color: isDark ? "#94a3b8" : "#64748b",
+      fontSize: 13,
+      lineHeight: 1.45,
+    },
 
-const threeColumnRowStyle: CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
-  gap: 10,
-};
+    emptyText: {
+      color: isDark ? "#94a3b8" : "#64748b",
+      fontSize: 13,
+      margin: 0,
+    },
 
-const fourColumnRowStyle: CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
-  gap: 10,
-};
+    dataGrid: {
+      display: "grid",
+      gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+      gap: 10,
+    },
 
-const capacityStripStyle: CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
-  gap: 10,
-  paddingTop: 12,
-  borderTop: "1px solid #e2e8f0",
-};
+    threeColumnGrid: {
+      display: "grid",
+      gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+      gap: 10,
+    },
 
-const dataItemStyle: CSSProperties = {
-  padding: "12px 12px",
-  borderRadius: 14,
-  background: "#ffffff",
-  border: "1px solid #e2e8f0",
-  display: "grid",
-  gap: 4,
-  minWidth: 0,
-};
+    fourColumnGrid: {
+      display: "grid",
+      gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
+      gap: 10,
+    },
 
-const dataLabelStyle: CSSProperties = {
-  color: "#64748b",
-  fontSize: 11,
-  fontWeight: 800,
-  textTransform: "uppercase",
-  letterSpacing: "0.06em",
-  whiteSpace: "nowrap",
-};
+    capacityStrip: {
+      display: "grid",
+      gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+      gap: 10,
+      paddingTop: 12,
+      borderTop: `1px solid ${isDark ? "#1e293b" : "#e2e8f0"}`,
+    },
 
-const dataValueStyle: CSSProperties = {
-  color: "#0f172a",
-  fontSize: 14,
-  fontWeight: 900,
-  lineHeight: 1.2,
-  overflowWrap: "anywhere",
-};
+    dataItem: {
+      padding: "12px 12px",
+      borderRadius: 14,
+      background: isDark ? "#020617" : "#ffffff",
+      border: `1px solid ${isDark ? "#334155" : "#e2e8f0"}`,
+      display: "grid",
+      gap: 4,
+      minWidth: 0,
+    },
 
-// const runButtonStyle: CSSProperties = {
-//   padding: "11px 15px",
-//   borderRadius: 14,
-//   border: "1px solid rgba(147,197,253,0.55)",
-//   background: "linear-gradient(180deg, #2563eb, #1d4ed8)",
-//   color: "white",
-//   fontWeight: 900,
-//   cursor: "pointer",
-//   boxShadow: "0 12px 28px rgba(37, 99, 235, 0.35)",
-//   whiteSpace: "nowrap",
-// };
+    dataLabel: {
+      color: isDark ? "#93c5fd" : "#334155",
+      fontSize: 11,
+      fontWeight: 800,
+      textTransform: "uppercase",
+      letterSpacing: "0.06em",
+      whiteSpace: "nowrap",
+    },
+
+    dataValue: {
+      color: isDark ? "#f8fafc" : "#111827",
+      fontSize: 14,
+      fontWeight: 900,
+      lineHeight: 1.2,
+      overflowWrap: "anywhere",
+    },
+  };
+}
