@@ -133,6 +133,28 @@ function App() {
     phi: 0.75,
   });
 
+  useEffect(() => {
+    setCurrentBoltData((prev) => {
+      const strength =
+        prev.boltType === "slip-critical"
+          ? prev.slipCriticalStrength
+          : prev.shearStrength;
+
+      const nextCapacity =
+        settings.designMethod === "LRFD" ? strength?.lrfd : strength?.asd;
+
+      return {
+        ...prev,
+        capacity: nextCapacity ?? prev.capacity,
+      };
+    });
+  }, [
+    settings.designMethod,
+    currentBoltData.boltType,
+    currentBoltData.shearStrength,
+    currentBoltData.slipCriticalStrength,
+  ]);
+
   const isDark = settings.theme === "dark";
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -145,10 +167,10 @@ function App() {
     {
       id: "P1",
       label: "P1",
-      x: 0,
-      y: -6,
+      x: 10,
+      y: 0,
       inputMode: "magnitude-angle",
-      magnitude: 20,
+      magnitude: 15,
       angleDeg: 90,
       fx: 0,
       fy: 20,
@@ -491,7 +513,7 @@ function App() {
           viewOptions={viewOptions}
           setViewOptions={setViewOptions}
           currentBoltData={currentBoltData}
-          
+          designMethod={settings.designMethod}
         />
 
         <Canvas

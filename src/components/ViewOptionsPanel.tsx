@@ -1,4 +1,5 @@
 import type { CurrentBoltData } from "../App";
+import type { DesignMethod } from "../types/app";
 
 export type ViewOptions = {
   showBoltForceVectors: boolean;
@@ -12,12 +13,14 @@ type ViewOptionsPanelProps = {
   viewOptions: ViewOptions;
   setViewOptions: React.Dispatch<React.SetStateAction<ViewOptions>>;
   currentBoltData: CurrentBoltData;
+  designMethod: DesignMethod;
 };
 
 export function ViewOptionsPanel({
   viewOptions,
   setViewOptions,
   currentBoltData,
+  designMethod,
 }: ViewOptionsPanelProps) {
   function updateOption(key: keyof ViewOptions, value: boolean) {
     setViewOptions((prev) => ({
@@ -102,19 +105,27 @@ export function ViewOptionsPanel({
           }
         />
         <InfoChip
-          label="Capacity"
-          value={
-            currentBoltData.capacity != null
-              ? `${currentBoltData.capacity.toFixed(2)} k`
-              : "N/A"
-          }
-        />
+            label={designMethod === "LRFD" ? "ϕRn" : "Rn/Ω"}
+            value={
+                currentBoltData.capacity != null
+                ? `${currentBoltData.capacity.toFixed(2)} k`
+                : "N/A"
+            }
+            />
       </>
     ) : (
       <>
         <InfoChip label="Surface" value={currentBoltData.fayingSurface} />
         <InfoChip label="Hole" value={currentBoltData.holeType} />
         <InfoChip label="μ" value={currentBoltData.mu.toFixed(2)} />
+          <InfoChip
+            label={designMethod === "LRFD" ? "ϕRn" : "Rn/Ω"}
+            value={
+            currentBoltData.capacity != null
+                ? `${currentBoltData.capacity.toFixed(2)} k`
+                : "N/A"
+            }
+        />
       </>
     )}
   </div>
