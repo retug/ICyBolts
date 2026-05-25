@@ -554,13 +554,19 @@ function App() {
           <directionalLight position={[10, -10, 10]} intensity={1.2} />
 
           <Grid
-            args={[50, 50]}
-            cellSize={1}
-            sectionSize={5}
-            fadeDistance={30}
-            rotation={[Math.PI / 2, 0, 0]}
-            position={[0, 0, -0.05]}
-          />
+          args={[50, 50]}
+          cellSize={1}
+          sectionSize={5}
+          cellThickness={isDark ? 0.7 : 0.45}
+          sectionThickness={isDark ? 1.35 : 0.9}
+          cellColor={isDark ? "#1d4ed8" : "#bfdbfe"}
+          sectionColor={isDark ? "#2563eb" : "#60a5fa"}
+          infiniteGrid={false}
+          fadeDistance={100}
+          fadeStrength={0}
+          rotation={[Math.PI / 2, 0, 0]}
+          position={[0, 0, -0.05]}
+        />
 
           {activeTab === "bolts" && (
             <CustomBoltPreviewDot
