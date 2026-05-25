@@ -409,6 +409,7 @@ function App() {
           setLoads={setLoads}
           selectedLoadIds={selectedLoadIds}
           unitSystem={settings.unitSystem}
+          isDark={settings.theme === "dark"}
         />
       );
     }

@@ -7,6 +7,7 @@ type LoadPanelProps = {
   setLoads: React.Dispatch<React.SetStateAction<AppliedLoad[]>>;
   selectedLoadIds: string[];
   unitSystem: UnitSystem;
+  isDark?: boolean;
 };
 
 type NumberTextByLoad = Record<string, Record<string, string>>;
@@ -41,6 +42,7 @@ export function LoadPanel({
   setLoads,
   selectedLoadIds,
   unitSystem,
+  isDark = true,
 }: LoadPanelProps) {
   const [newLoadX, setNewLoadX] = useState("0");
   const [newLoadY, setNewLoadY] = useState("0");
@@ -54,10 +56,14 @@ export function LoadPanel({
 
   const [draftValues, setDraftValues] = useState<NumberTextByLoad>({});
 
+  const styles = getStyles(isDark);
+
   const forceUnit = unitSystem === "metric" ? "kN" : "kips";
   const momentUnit = unitSystem === "metric" ? "kN-mm" : "kip-in";
 
-  const selectedLoads = loads.filter((load) => selectedLoadIds.includes(load.id));
+  const selectedLoads = loads.filter((load) =>
+    selectedLoadIds.includes(load.id)
+  );
 
   function getDraft(load: AppliedLoad, field: keyof AppliedLoad) {
     const existing = draftValues[load.id]?.[field as string];
@@ -251,21 +257,21 @@ export function LoadPanel({
   return (
     <div style={{ display: "grid", gap: 18 }}>
       <div>
-        <h2 style={{ margin: 0, fontSize: 28 }}>Load Data</h2>
+        <h2 style={styles.pageTitle}>Load Data</h2>
 
-        <p style={{ marginTop: 6, color: "#94a3b8", lineHeight: 1.45 }}>
+        <p style={styles.pageSubtitle}>
           Add applied loads and edit selected loads from the scene.
         </p>
       </div>
 
-      <section style={cardStyle}>
-        <h3 style={sectionTitleStyle}>Add Load</h3>
+      <section style={styles.card}>
+        <h3 style={styles.sectionTitle}>Add Load</h3>
 
-        <label style={labelStyle}>
+        <label style={styles.label}>
           <span>Input Mode</span>
 
           <select
-            style={inputStyle}
+            style={styles.input}
             value={newLoadInputMode}
             onChange={(e) => setNewLoadInputMode(e.target.value as LoadInputMode)}
           >
@@ -275,19 +281,25 @@ export function LoadPanel({
         </label>
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-          <label style={labelStyle}>
+          <label style={styles.label}>
             <span>X Location</span>
             <input
-              style={inputStyle}
+              style={{
+                ...styles.input,
+                ...invalidStyle(newLoadX, isDark),
+              }}
               value={newLoadX}
               onChange={(e) => setNewLoadX(e.target.value)}
             />
           </label>
 
-          <label style={labelStyle}>
+          <label style={styles.label}>
             <span>Y Location</span>
             <input
-              style={inputStyle}
+              style={{
+                ...styles.input,
+                ...invalidStyle(newLoadY, isDark),
+              }}
               value={newLoadY}
               onChange={(e) => setNewLoadY(e.target.value)}
             />
@@ -295,19 +307,25 @@ export function LoadPanel({
 
           {newLoadInputMode === "magnitude-angle" ? (
             <>
-              <label style={labelStyle}>
+              <label style={styles.label}>
                 <span>Force ({forceUnit})</span>
                 <input
-                  style={inputStyle}
+                  style={{
+                    ...styles.input,
+                    ...invalidStyle(newLoadMagnitude, isDark),
+                  }}
                   value={newLoadMagnitude}
                   onChange={(e) => setNewLoadMagnitude(e.target.value)}
                 />
               </label>
 
-              <label style={labelStyle}>
+              <label style={styles.label}>
                 <span>Angle (deg)</span>
                 <input
-                  style={inputStyle}
+                  style={{
+                    ...styles.input,
+                    ...invalidStyle(newLoadAngleDeg, isDark),
+                  }}
                   value={newLoadAngleDeg}
                   onChange={(e) => setNewLoadAngleDeg(e.target.value)}
                 />
@@ -315,19 +333,25 @@ export function LoadPanel({
             </>
           ) : (
             <>
-              <label style={labelStyle}>
+              <label style={styles.label}>
                 <span>Fx ({forceUnit})</span>
                 <input
-                  style={inputStyle}
+                  style={{
+                    ...styles.input,
+                    ...invalidStyle(newLoadFx, isDark),
+                  }}
                   value={newLoadFx}
                   onChange={(e) => setNewLoadFx(e.target.value)}
                 />
               </label>
 
-              <label style={labelStyle}>
+              <label style={styles.label}>
                 <span>Fy ({forceUnit})</span>
                 <input
-                  style={inputStyle}
+                  style={{
+                    ...styles.input,
+                    ...invalidStyle(newLoadFy, isDark),
+                  }}
                   value={newLoadFy}
                   onChange={(e) => setNewLoadFy(e.target.value)}
                 />
@@ -335,22 +359,25 @@ export function LoadPanel({
             </>
           )}
 
-          <label style={labelStyle}>
+          <label style={styles.label}>
             <span>Moment ({momentUnit})</span>
             <input
-              style={inputStyle}
+              style={{
+                ...styles.input,
+                ...invalidStyle(newLoadMoment, isDark),
+              }}
               value={newLoadMoment}
               onChange={(e) => setNewLoadMoment(e.target.value)}
             />
           </label>
         </div>
 
-        <button style={primaryButtonStyle} onClick={addLoad}>
+        <button style={styles.primaryButton} onClick={addLoad}>
           Add Load
         </button>
       </section>
 
-      <section style={cardStyle}>
+      <section style={styles.card}>
         <div
           style={{
             display: "flex",
@@ -359,11 +386,11 @@ export function LoadPanel({
             alignItems: "center",
           }}
         >
-          <h3 style={sectionTitleStyle}>Selected Loads</h3>
+          <h3 style={styles.sectionTitle}>Selected Loads</h3>
 
           <button
             style={{
-              ...dangerButtonStyle,
+              ...styles.dangerButton,
               opacity: selectedLoads.length === 0 ? 0.45 : 1,
               cursor: selectedLoads.length === 0 ? "not-allowed" : "pointer",
             }}
@@ -375,39 +402,33 @@ export function LoadPanel({
         </div>
 
         {selectedLoads.length === 0 && (
-          <p style={{ color: "#64748b", fontSize: 13, margin: 0 }}>
+          <p style={styles.emptyText}>
             Drag a selection window in the scene to edit loads.
           </p>
         )}
 
         {selectedLoads.length > 0 && (
           <div style={{ maxHeight: 440, overflowY: "auto" }}>
-            <table
-              style={{
-                width: "100%",
-                borderCollapse: "collapse",
-                fontSize: 12,
-              }}
-            >
+            <table style={styles.table}>
               <thead>
                 <tr>
-                  <th style={thStyle}>Load</th>
-                  <th style={thStyle}>X</th>
-                  <th style={thStyle}>Y</th>
-                  <th style={thStyle}>Mode</th>
-                  <th style={thStyle}>Force</th>
-                  <th style={thStyle}>Angle / Fy</th>
-                  <th style={thStyle}>M</th>
-                  <th style={thStyle}></th>
+                  <th style={styles.th}>Load</th>
+                  <th style={styles.th}>X</th>
+                  <th style={styles.th}>Y</th>
+                  <th style={styles.th}>Mode</th>
+                  <th style={styles.th}>Force</th>
+                  <th style={styles.th}>Angle / Fy</th>
+                  <th style={styles.th}>M</th>
+                  <th style={styles.th}></th>
                 </tr>
               </thead>
 
               <tbody>
                 {selectedLoads.map((load) => (
                   <tr key={load.id}>
-                    <td style={tdStyle}>
+                    <td style={styles.td}>
                       <input
-                        style={tableInputStyle}
+                        style={styles.tableInput}
                         value={load.label}
                         onChange={(e) =>
                           updateLoadText(load.id, "label", e.target.value)
@@ -415,31 +436,31 @@ export function LoadPanel({
                       />
                     </td>
 
-                    <td style={tdStyle}>
+                    <td style={styles.td}>
                       <input
                         style={{
-                          ...tableInputStyle,
-                          ...invalidStyle(getDraft(load, "x")),
+                          ...styles.tableInput,
+                          ...invalidStyle(getDraft(load, "x"), isDark),
                         }}
                         value={getDraft(load, "x")}
                         onChange={(e) => updateDraft(load.id, "x", e.target.value)}
                       />
                     </td>
 
-                    <td style={tdStyle}>
+                    <td style={styles.td}>
                       <input
                         style={{
-                          ...tableInputStyle,
-                          ...invalidStyle(getDraft(load, "y")),
+                          ...styles.tableInput,
+                          ...invalidStyle(getDraft(load, "y"), isDark),
                         }}
                         value={getDraft(load, "y")}
                         onChange={(e) => updateDraft(load.id, "y", e.target.value)}
                       />
                     </td>
 
-                    <td style={tdStyle}>
+                    <td style={styles.td}>
                       <select
-                        style={tableInputStyle}
+                        style={styles.tableInput}
                         value={load.inputMode}
                         onChange={(e) =>
                           updateInputMode(load.id, e.target.value as LoadInputMode)
@@ -452,11 +473,11 @@ export function LoadPanel({
 
                     {load.inputMode === "magnitude-angle" ? (
                       <>
-                        <td style={tdStyle}>
+                        <td style={styles.td}>
                           <input
                             style={{
-                              ...tableInputStyle,
-                              ...invalidStyle(getDraft(load, "magnitude")),
+                              ...styles.tableInput,
+                              ...invalidStyle(getDraft(load, "magnitude"), isDark),
                             }}
                             value={getDraft(load, "magnitude")}
                             onChange={(e) =>
@@ -465,11 +486,11 @@ export function LoadPanel({
                           />
                         </td>
 
-                        <td style={tdStyle}>
+                        <td style={styles.td}>
                           <input
                             style={{
-                              ...tableInputStyle,
-                              ...invalidStyle(getDraft(load, "angleDeg")),
+                              ...styles.tableInput,
+                              ...invalidStyle(getDraft(load, "angleDeg"), isDark),
                             }}
                             value={getDraft(load, "angleDeg")}
                             onChange={(e) =>
@@ -480,11 +501,11 @@ export function LoadPanel({
                       </>
                     ) : (
                       <>
-                        <td style={tdStyle}>
+                        <td style={styles.td}>
                           <input
                             style={{
-                              ...tableInputStyle,
-                              ...invalidStyle(getDraft(load, "fx")),
+                              ...styles.tableInput,
+                              ...invalidStyle(getDraft(load, "fx"), isDark),
                             }}
                             value={getDraft(load, "fx")}
                             onChange={(e) =>
@@ -493,11 +514,11 @@ export function LoadPanel({
                           />
                         </td>
 
-                        <td style={tdStyle}>
+                        <td style={styles.td}>
                           <input
                             style={{
-                              ...tableInputStyle,
-                              ...invalidStyle(getDraft(load, "fy")),
+                              ...styles.tableInput,
+                              ...invalidStyle(getDraft(load, "fy"), isDark),
                             }}
                             value={getDraft(load, "fy")}
                             onChange={(e) =>
@@ -508,11 +529,11 @@ export function LoadPanel({
                       </>
                     )}
 
-                    <td style={tdStyle}>
+                    <td style={styles.td}>
                       <input
                         style={{
-                          ...tableInputStyle,
-                          ...invalidStyle(getDraft(load, "moment")),
+                          ...styles.tableInput,
+                          ...invalidStyle(getDraft(load, "moment"), isDark),
                         }}
                         value={getDraft(load, "moment")}
                         onChange={(e) =>
@@ -521,9 +542,9 @@ export function LoadPanel({
                       />
                     </td>
 
-                    <td style={tdStyle}>
+                    <td style={styles.td}>
                       <button
-                        style={smallDangerButtonStyle}
+                        style={styles.smallDangerButton}
                         onClick={() => removeLoad(load.id)}
                       >
                         Del
@@ -534,7 +555,7 @@ export function LoadPanel({
               </tbody>
             </table>
 
-            <p style={{ color: "#94a3b8", fontSize: 12, marginBottom: 0 }}>
+            <p style={styles.noteText}>
               Force units: {forceUnit}. Moment units: {momentUnit}. Internal
               backend units remain kip and inches.
             </p>
@@ -545,96 +566,145 @@ export function LoadPanel({
   );
 }
 
-function invalidStyle(value: string): React.CSSProperties {
+function invalidStyle(value: string, isDark: boolean): React.CSSProperties {
   return isValidNumberText(value)
     ? {}
     : {
         border: "1px solid #ef4444",
-        background: "#fee2e2",
-        color: "#7f1d1d",
+        background: isDark ? "rgba(127, 29, 29, 0.35)" : "#fee2e2",
+        color: isDark ? "#fecaca" : "#7f1d1d",
       };
 }
 
-const cardStyle: React.CSSProperties = {
-  padding: 16,
-  borderRadius: 18,
-  background: "#f8fafc",
-  border: "1px solid #e5e7eb",
-  display: "grid",
-  gap: 14,
-};
+function getStyles(isDark: boolean): Record<string, React.CSSProperties> {
+  return {
+    pageTitle: {
+      margin: 0,
+      fontSize: 28,
+      color: isDark ? "#f8fafc" : "#111827",
+    },
 
-const sectionTitleStyle: React.CSSProperties = {
-  margin: 0,
-  fontSize: 18,
-};
+    pageSubtitle: {
+      marginTop: 8,
+      color: isDark ? "#94a3b8" : "#64748b",
+      lineHeight: 1.45,
+      fontSize: 14,
+    },
 
-const labelStyle: React.CSSProperties = {
-  display: "grid",
-  gap: 6,
-  fontSize: 13,
-  fontWeight: 700,
-};
+    card: {
+      padding: 16,
+      borderRadius: 18,
+      background: isDark ? "#111827" : "#f8fafc",
+      border: `1px solid ${isDark ? "#1e293b" : "#e5e7eb"}`,
+      display: "grid",
+      gap: 14,
+      boxShadow: isDark ? "none" : "0 8px 22px rgba(15, 23, 42, 0.06)",
+    },
 
-const inputStyle: React.CSSProperties = {
-  width: "100%",
-  boxSizing: "border-box",
-  padding: "10px 12px",
-  borderRadius: 10,
-  border: "1px solid #d1d5db",
-  background: "#ffffff",
-  color: "#111827",
-  fontWeight: 600,
-};
+    sectionTitle: {
+      margin: 0,
+      fontSize: 18,
+      color: isDark ? "#f8fafc" : "#111827",
+      fontWeight: 800,
+    },
 
-const primaryButtonStyle: React.CSSProperties = {
-  width: "100%",
-  padding: "12px 14px",
-  borderRadius: 12,
-  border: "none",
-  background: "#2563eb",
-  color: "white",
-  fontWeight: 800,
-  cursor: "pointer",
-};
+    label: {
+      display: "grid",
+      gap: 6,
+      fontSize: 13,
+      fontWeight: 700,
+      color: isDark ? "#dbeafe" : "#334155",
+    },
 
-const dangerButtonStyle: React.CSSProperties = {
-  padding: "8px 12px",
-  borderRadius: 10,
-  border: "none",
-  background: "#dc2626",
-  color: "white",
-  fontWeight: 800,
-};
+    input: {
+      width: "100%",
+      boxSizing: "border-box",
+      padding: "10px 12px",
+      borderRadius: 10,
+      border: `1px solid ${isDark ? "#334155" : "#d1d5db"}`,
+      background: isDark ? "#020617" : "#ffffff",
+      color: isDark ? "#f8fafc" : "#111827",
+      fontWeight: 700,
+      outline: "none",
+    },
 
-const smallDangerButtonStyle: React.CSSProperties = {
-  padding: "6px 8px",
-  borderRadius: 8,
-  border: "none",
-  background: "#dc2626",
-  color: "white",
-  fontWeight: 800,
-  cursor: "pointer",
-};
+    primaryButton: {
+      width: "100%",
+      padding: "12px 14px",
+      borderRadius: 12,
+      border: "none",
+      background: "#2563eb",
+      color: "white",
+      fontWeight: 800,
+      cursor: "pointer",
+    },
 
-const thStyle: React.CSSProperties = {
-  textAlign: "left",
-  padding: "8px 6px",
-  borderBottom: "1px solid #cbd5e1",
-  color: "#334155",
-};
+    dangerButton: {
+      padding: "8px 12px",
+      borderRadius: 10,
+      border: "none",
+      background: "#dc2626",
+      color: "white",
+      fontWeight: 800,
+    },
 
-const tdStyle: React.CSSProperties = {
-  padding: "6px",
-  borderBottom: "1px solid #e5e7eb",
-  verticalAlign: "top",
-};
+    smallDangerButton: {
+      padding: "6px 8px",
+      borderRadius: 8,
+      border: "none",
+      background: "#dc2626",
+      color: "white",
+      fontWeight: 800,
+      cursor: "pointer",
+    },
 
-const tableInputStyle: React.CSSProperties = {
-  width: "100%",
-  minWidth: 58,
-  boxSizing: "border-box",
-  padding: "6px 8px",
-  borderRadius: 8,
-  border: "1px solid #d1d5db",
-};
+    table: {
+      width: "100%",
+      borderCollapse: "collapse",
+      fontSize: 12,
+      color: isDark ? "#e5e7eb" : "#111827",
+    },
+
+    th: {
+      textAlign: "left",
+      padding: "8px 6px",
+      borderBottom: `1px solid ${isDark ? "#334155" : "#cbd5e1"}`,
+      color: isDark ? "#93c5fd" : "#334155",
+      fontSize: 11,
+      textTransform: "uppercase",
+      letterSpacing: "0.04em",
+    },
+
+    td: {
+      padding: "6px",
+      borderBottom: `1px solid ${isDark ? "#1e293b" : "#e5e7eb"}`,
+      verticalAlign: "top",
+      color: isDark ? "#e5e7eb" : "#111827",
+    },
+
+    tableInput: {
+      width: "100%",
+      minWidth: 58,
+      boxSizing: "border-box",
+      padding: "6px 8px",
+      borderRadius: 8,
+      border: `1px solid ${isDark ? "#334155" : "#d1d5db"}`,
+      background: isDark ? "#020617" : "#ffffff",
+      color: isDark ? "#f8fafc" : "#111827",
+      fontWeight: 700,
+      outline: "none",
+    },
+
+    emptyText: {
+      color: isDark ? "#94a3b8" : "#64748b",
+      fontSize: 13,
+      margin: 0,
+    },
+
+    noteText: {
+      color: isDark ? "#94a3b8" : "#64748b",
+      fontSize: 12,
+      marginBottom: 0,
+    },
+  };
+}

@@ -31,7 +31,6 @@ type BoltPanelProps = {
   setCustomBoltY: React.Dispatch<React.SetStateAction<string>>;
   settings: AppSettings;
   setSettings: React.Dispatch<React.SetStateAction<AppSettings>>;
-
   currentBoltData: CurrentBoltData;
   setCurrentBoltData: React.Dispatch<React.SetStateAction<CurrentBoltData>>;
 };
@@ -46,7 +45,6 @@ export function BoltPanel({
   customBoltY,
   setCustomBoltY,
   settings,
-  // setSettings,
   currentBoltData,
   setCurrentBoltData,
 }: BoltPanelProps) {
@@ -54,6 +52,8 @@ export function BoltPanel({
   const [cols, setCols] = useState(2);
   const [spacingX, setSpacingX] = useState(4);
   const [spacingY, setSpacingY] = useState(4);
+
+  const isDark = settings.theme === "dark";
 
   const {
     designation,
@@ -74,15 +74,7 @@ export function BoltPanel({
     boltSizeOptions.find((b) => b.label === "3/4") ??
     boltSizeOptions[0];
 
-  // function updateSetting<K extends keyof AppSettings>(
-  //   key: K,
-  //   value: AppSettings[K]
-  // ) {
-  //   setSettings((prev) => ({
-  //     ...prev,
-  //     [key]: value,
-  //   }));
-  // }
+  const styles = getStyles(isDark);
 
   function getDesignPatch({
     diameterLabel,
@@ -308,221 +300,207 @@ export function BoltPanel({
   return (
     <div style={{ display: "grid", gap: 18 }}>
       <div>
-        <h2 style={{ margin: 0, fontSize: 28 }}>Bolt Data</h2>
+        <h2 style={styles.pageTitle}>Bolt Data</h2>
+        <p style={styles.pageSubtitle}>
+          Define the bolt type, design properties, geometry, and selected bolt
+          locations.
+        </p>
       </div>
 
-      <section style={cardStyle}>
-        <h3 style={sectionTitleStyle}>Connection Type</h3>
+      <section style={styles.card}>
+        <h3 style={styles.sectionTitle}>Bolt Configuration</h3>
 
-        <label style={labelStyle}>
-          <span>Bolt Type</span>
-          <select
-            style={inputStyle}
-            value={boltType}
-            onChange={(e) => {
-              const value = e.target.value as BoltType;
+        <div style={styles.twoColumnGrid}>
+          <label style={styles.label}>
+            <span>Bolt Type</span>
+            <select
+              style={styles.input}
+              value={boltType}
+              onChange={(e) => {
+                const value = e.target.value as BoltType;
 
-              setCurrentBoltData((prev) => ({
-                ...prev,
-                boltType: value,
-              }));
+                setCurrentBoltData((prev) => ({
+                  ...prev,
+                  boltType: value,
+                }));
 
-              applyDesignOptionsToBolts(
-                designation,
-                threadCondition,
-                shearPlane,
-                fayingSurface,
-                holeType,
-                value
-              );
-            }}
-          >
-            <option value="bearing">Bearing</option>
-            <option value="slip-critical">Slip Critical</option>
-          </select>
-        </label>
+                applyDesignOptionsToBolts(
+                  designation,
+                  threadCondition,
+                  shearPlane,
+                  fayingSurface,
+                  holeType,
+                  value
+                );
+              }}
+            >
+              <option value="bearing">Bearing</option>
+              <option value="slip-critical">Slip Critical</option>
+            </select>
+          </label>
 
-        {boltType === "slip-critical" && (
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "1fr 1fr",
-              gap: 12,
-            }}
-          >
-            <label style={labelStyle}>
-              <span>Faying Surface</span>
-              <select
-                style={inputStyle}
-                value={fayingSurface}
-                onChange={(e) => {
-                  const value = e.target.value as SlipCriticalFayingSurface;
+          <label style={styles.label}>
+            <span>Bolt Size</span>
+            <select
+              style={styles.input}
+              value={currentBoltData.label}
+              onChange={(e) => updateBoltSize(e.target.value)}
+            >
+              {boltSizeOptions.map((size) => (
+                <option
+                  key={`${size.unitSystem}-${size.label}`}
+                  value={size.label}
+                >
+                  {size.unitSystem === "imperial"
+                    ? `${size.label}"`
+                    : size.label}
+                </option>
+              ))}
+            </select>
+          </label>
 
-                  updateCurrentBoltData("fayingSurface", value);
+          <label style={styles.label}>
+            <span>Bolt Designation</span>
+            <select
+              style={styles.input}
+              value={designation}
+              onChange={(e) => {
+                const value = e.target.value as BoltDesignation;
+                const tc =
+                  value === "A307" ? "not-applicable" : threadCondition;
 
-                  applyDesignOptionsToBolts(
-                    designation,
-                    threadCondition,
-                    shearPlane,
-                    value,
-                    holeType
-                  );
-                }}
-              >
-                <option value="Class A">Class A - μ = 0.30</option>
-                <option value="Class B">Class B - μ = 0.50</option>
-              </select>
-            </label>
+                updateCurrentBoltData("designation", value);
+                updateCurrentBoltData("threadCondition", tc);
 
-            <label style={labelStyle}>
-              <span>Hole Type</span>
-              <select
-                style={inputStyle}
-                value={holeType}
-                onChange={(e) => {
-                  const value = e.target.value as SlipCriticalHoleType;
+                applyDesignOptionsToBolts(
+                  value,
+                  tc,
+                  shearPlane,
+                  fayingSurface,
+                  holeType
+                );
+              }}
+            >
+              <option value="Group A">Group A</option>
+              <option value="Group B">Group B</option>
+              <option value="Group C">Group C</option>
+              <option value="A307">A307</option>
+            </select>
+          </label>
 
-                  updateCurrentBoltData("holeType", value);
+          <label style={styles.label}>
+            <span>Thread Condition</span>
+            <select
+              style={styles.input}
+              value={threadCondition}
+              disabled={designation === "A307"}
+              onChange={(e) => {
+                const value = e.target.value as BoltThreadCondition;
 
-                  applyDesignOptionsToBolts(
-                    designation,
-                    threadCondition,
-                    shearPlane,
-                    fayingSurface,
-                    value
-                  );
-                }}
-              >
-                <option value="STD/SSLT">STD / SSLT</option>
-                <option value="OVS/SSLP">OVS / SSLP</option>
-                <option value="LSL">LSL</option>
-              </select>
-            </label>
-          </div>
-        )}
+                updateCurrentBoltData("threadCondition", value);
+
+                applyDesignOptionsToBolts(
+                  designation,
+                  value,
+                  shearPlane,
+                  fayingSurface,
+                  holeType
+                );
+              }}
+            >
+              <option value="N">N - Threads Included</option>
+              <option value="X">X - Threads Excluded</option>
+              <option value="not-applicable">Not Applicable</option>
+            </select>
+          </label>
+
+          <label style={styles.label}>
+            <span>Shear Plane</span>
+            <select
+              style={styles.input}
+              value={shearPlane}
+              onChange={(e) => {
+                const value = e.target.value as BoltShearPlane;
+
+                updateCurrentBoltData("shearPlane", value);
+
+                applyDesignOptionsToBolts(
+                  designation,
+                  threadCondition,
+                  value,
+                  fayingSurface,
+                  holeType
+                );
+              }}
+            >
+              <option value="single">Single Shear</option>
+              <option value="double">Double Shear</option>
+            </select>
+          </label>
+
+          {boltType === "slip-critical" && (
+            <>
+              <label style={styles.label}>
+                <span>Faying Surface</span>
+                <select
+                  style={styles.input}
+                  value={fayingSurface}
+                  onChange={(e) => {
+                    const value = e.target.value as SlipCriticalFayingSurface;
+
+                    updateCurrentBoltData("fayingSurface", value);
+
+                    applyDesignOptionsToBolts(
+                      designation,
+                      threadCondition,
+                      shearPlane,
+                      value,
+                      holeType
+                    );
+                  }}
+                >
+                  <option value="Class A">Class A - μ = 0.30</option>
+                  <option value="Class B">Class B - μ = 0.50</option>
+                </select>
+              </label>
+
+              <label style={styles.label}>
+                <span>Hole Type</span>
+                <select
+                  style={styles.input}
+                  value={holeType}
+                  onChange={(e) => {
+                    const value = e.target.value as SlipCriticalHoleType;
+
+                    updateCurrentBoltData("holeType", value);
+
+                    applyDesignOptionsToBolts(
+                      designation,
+                      threadCondition,
+                      shearPlane,
+                      fayingSurface,
+                      value
+                    );
+                  }}
+                >
+                  <option value="STD/SSLT">STD / SSLT</option>
+                  <option value="OVS/SSLP">OVS / SSLP</option>
+                  <option value="LSL">LSL</option>
+                </select>
+              </label>
+            </>
+          )}
+        </div>
       </section>
 
-      <section style={cardStyle}>
-        <h3 style={sectionTitleStyle}>Global Bolt Size</h3>
+      <section style={styles.card}>
+        <h3 style={styles.sectionTitle}>Custom Bolt</h3>
 
-        <label style={labelStyle}>
-          <span>Bolt Size</span>
-          <select
-            style={inputStyle}
-            value={currentBoltData.label}
-            onChange={(e) => updateBoltSize(e.target.value)}
-          >
-            {boltSizeOptions.map((size) => (
-              <option
-                key={`${size.unitSystem}-${size.label}`}
-                value={size.label}
-              >
-                {size.unitSystem === "imperial"
-                  ? `${size.label}"`
-                  : size.label}
-              </option>
-            ))}
-          </select>
-        </label>
-      </section>
-
-      <section style={cardStyle}>
-        <h3 style={sectionTitleStyle}>Bolt Design Options</h3>
-
-        <label style={labelStyle}>
-          <span>Bolt Designation</span>
-          <select
-            style={inputStyle}
-            value={designation}
-            onChange={(e) => {
-              const value = e.target.value as BoltDesignation;
-              const tc =
-                value === "A307" ? "not-applicable" : threadCondition;
-
-              updateCurrentBoltData("designation", value);
-              updateCurrentBoltData("threadCondition", tc);
-
-              applyDesignOptionsToBolts(
-                value,
-                tc,
-                shearPlane,
-                fayingSurface,
-                holeType
-              );
-            }}
-          >
-            <option value="Group A">Group A</option>
-            <option value="Group B">Group B</option>
-            <option value="Group C">Group C</option>
-            <option value="A307">A307</option>
-          </select>
-        </label>
-
-        <label style={labelStyle}>
-          <span>Thread Condition</span>
-          <select
-            style={inputStyle}
-            value={threadCondition}
-            disabled={designation === "A307"}
-            onChange={(e) => {
-              const value = e.target.value as BoltThreadCondition;
-
-              updateCurrentBoltData("threadCondition", value);
-
-              applyDesignOptionsToBolts(
-                designation,
-                value,
-                shearPlane,
-                fayingSurface,
-                holeType
-              );
-            }}
-          >
-            <option value="N">N - Threads Included</option>
-            <option value="X">X - Threads Excluded</option>
-            <option value="not-applicable">Not Applicable</option>
-          </select>
-        </label>
-
-        <label style={labelStyle}>
-          <span>Shear Plane</span>
-          <select
-            style={inputStyle}
-            value={shearPlane}
-            onChange={(e) => {
-              const value = e.target.value as BoltShearPlane;
-
-              updateCurrentBoltData("shearPlane", value);
-
-              applyDesignOptionsToBolts(
-                designation,
-                threadCondition,
-                value,
-                fayingSurface,
-                holeType
-              );
-            }}
-          >
-            <option value="single">Single Shear</option>
-            <option value="double">Double Shear</option>
-          </select>
-        </label>
-      </section>
-
-      <section style={cardStyle}>
-        <h3 style={sectionTitleStyle}>Custom Bolt</h3>
-
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "1fr 1fr",
-            gap: 12,
-          }}
-        >
-          <label style={labelStyle}>
+        <div style={styles.twoColumnGrid}>
+          <label style={styles.label}>
             <span>X</span>
             <input
-              style={inputStyle}
+              style={styles.input}
               type="number"
               step={0.25}
               value={customBoltX}
@@ -530,10 +508,10 @@ export function BoltPanel({
             />
           </label>
 
-          <label style={labelStyle}>
+          <label style={styles.label}>
             <span>Y</span>
             <input
-              style={inputStyle}
+              style={styles.input}
               type="number"
               step={0.25}
               value={customBoltY}
@@ -542,25 +520,19 @@ export function BoltPanel({
           </label>
         </div>
 
-        <button style={primaryButtonStyle} onClick={addCustomBolt}>
+        <button style={styles.primaryButton} onClick={addCustomBolt}>
           Add Custom Bolt
         </button>
       </section>
 
-      <section style={cardStyle}>
-        <h3 style={sectionTitleStyle}>Parametric Grid</h3>
+      <section style={styles.card}>
+        <h3 style={styles.sectionTitle}>Parametric Grid</h3>
 
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "1fr 1fr",
-            gap: 12,
-          }}
-        >
-          <label style={labelStyle}>
+        <div style={styles.twoColumnGrid}>
+          <label style={styles.label}>
             <span>Rows</span>
             <input
-              style={inputStyle}
+              style={styles.input}
               type="number"
               min={1}
               step={1}
@@ -569,10 +541,10 @@ export function BoltPanel({
             />
           </label>
 
-          <label style={labelStyle}>
+          <label style={styles.label}>
             <span>Columns</span>
             <input
-              style={inputStyle}
+              style={styles.input}
               type="number"
               min={1}
               step={1}
@@ -581,10 +553,10 @@ export function BoltPanel({
             />
           </label>
 
-          <label style={labelStyle}>
+          <label style={styles.label}>
             <span>Horizontal Spacing</span>
             <input
-              style={inputStyle}
+              style={styles.input}
               type="number"
               min={0}
               step={0.25}
@@ -593,10 +565,10 @@ export function BoltPanel({
             />
           </label>
 
-          <label style={labelStyle}>
+          <label style={styles.label}>
             <span>Vertical Spacing</span>
             <input
-              style={inputStyle}
+              style={styles.input}
               type="number"
               min={0}
               step={0.25}
@@ -606,46 +578,40 @@ export function BoltPanel({
           </label>
         </div>
 
-        <button style={primaryButtonStyle} onClick={addParametricGridToAnalysis}>
+        <button style={styles.primaryButton} onClick={addParametricGridToAnalysis}>
           Add to Analysis
         </button>
       </section>
 
-      <section style={cardStyle}>
-        <h3 style={sectionTitleStyle}>Selected Bolts</h3>
+      <section style={styles.card}>
+        <h3 style={styles.sectionTitle}>Selected Bolts</h3>
 
         {selectedBolts.length === 0 && (
-          <p style={{ color: "#64748b", fontSize: 13, margin: 0 }}>
+          <p style={styles.emptyText}>
             Drag a selection window in the scene to edit bolts.
           </p>
         )}
 
         {selectedBolts.length > 0 && (
           <div style={{ maxHeight: 340, overflowY: "auto" }}>
-            <table
-              style={{
-                width: "100%",
-                borderCollapse: "collapse",
-                fontSize: 13,
-              }}
-            >
+            <table style={styles.table}>
               <thead>
                 <tr>
-                  <th style={thStyle}>Bolt</th>
-                  <th style={thStyle}>X</th>
-                  <th style={thStyle}>Y</th>
-                  <th style={thStyle}>Force</th>
+                  <th style={styles.th}>Bolt</th>
+                  <th style={styles.th}>X</th>
+                  <th style={styles.th}>Y</th>
+                  <th style={styles.th}>Force</th>
                 </tr>
               </thead>
 
               <tbody>
                 {selectedBolts.map((bolt, index) => (
                   <tr key={bolt.id}>
-                    <td style={tdStyle}>B{index + 1}</td>
+                    <td style={styles.td}>B{index + 1}</td>
 
-                    <td style={tdStyle}>
+                    <td style={styles.td}>
                       <input
-                        style={tableInputStyle}
+                        style={styles.tableInput}
                         type="number"
                         value={bolt.x}
                         step={0.25}
@@ -655,9 +621,9 @@ export function BoltPanel({
                       />
                     </td>
 
-                    <td style={tdStyle}>
+                    <td style={styles.td}>
                       <input
-                        style={tableInputStyle}
+                        style={styles.tableInput}
                         type="number"
                         value={bolt.y}
                         step={0.25}
@@ -667,7 +633,7 @@ export function BoltPanel({
                       />
                     </td>
 
-                    <td style={tdStyle}>
+                    <td style={styles.td}>
                       {bolt.force?.magnitude?.toFixed(2) ?? "-"}
                     </td>
                   </tr>
@@ -681,65 +647,114 @@ export function BoltPanel({
   );
 }
 
-const cardStyle: React.CSSProperties = {
-  padding: 16,
-  borderRadius: 18,
-  background: "#f8fafc",
-  border: "1px solid #e5e7eb",
-  display: "grid",
-  gap: 14,
-};
+function getStyles(isDark: boolean): Record<string, React.CSSProperties> {
+  return {
+    pageTitle: {
+      margin: 0,
+      fontSize: 28,
+      color: isDark ? "#f8fafc" : "#111827",
+    },
 
-const sectionTitleStyle: React.CSSProperties = {
-  margin: 0,
-  fontSize: 18,
-};
+    pageSubtitle: {
+      marginTop: 8,
+      marginBottom: 0,
+      color: isDark ? "#94a3b8" : "#64748b",
+      lineHeight: 1.45,
+      fontSize: 14,
+    },
 
-const labelStyle: React.CSSProperties = {
-  display: "grid",
-  gap: 6,
-  fontSize: 13,
-  fontWeight: 700,
-};
+    card: {
+      padding: 16,
+      borderRadius: 18,
+      background: isDark ? "#111827" : "#f8fafc",
+      border: `1px solid ${isDark ? "#1e293b" : "#e5e7eb"}`,
+      display: "grid",
+      gap: 16,
+      boxShadow: isDark ? "none" : "0 8px 22px rgba(15, 23, 42, 0.06)",
+    },
 
-const inputStyle: React.CSSProperties = {
-  width: "100%",
-  boxSizing: "border-box",
-  padding: "10px 12px",
-  borderRadius: 10,
-  border: "1px solid #d1d5db",
-  background: "#ffffff",
-  color: "#111827",
-  fontWeight: 600,
-};
+    sectionTitle: {
+      margin: 0,
+      fontSize: 18,
+      color: isDark ? "#f8fafc" : "#111827",
+      fontWeight: 800,
+    },
 
-const primaryButtonStyle: React.CSSProperties = {
-  width: "100%",
-  padding: "12px 14px",
-  borderRadius: 12,
-  border: "none",
-  background: "#2563eb",
-  color: "white",
-  fontWeight: 800,
-  cursor: "pointer",
-};
+    twoColumnGrid: {
+      display: "grid",
+      gridTemplateColumns: "1fr 1fr",
+      gap: 14,
+    },
 
-const thStyle: React.CSSProperties = {
-  textAlign: "left",
-  padding: "8px 6px",
-  borderBottom: "1px solid #cbd5e1",
-  color: "#334155",
-};
+    label: {
+      display: "grid",
+      gap: 7,
+      fontSize: 13,
+      fontWeight: 700,
+      color: isDark ? "#dbeafe" : "#334155",
+    },
 
-const tdStyle: React.CSSProperties = {
-  padding: "6px",
-  borderBottom: "1px solid #e5e7eb",
-};
+    input: {
+      width: "100%",
+      boxSizing: "border-box",
+      padding: "10px 12px",
+      borderRadius: 10,
+      border: `1px solid ${isDark ? "#334155" : "#d1d5db"}`,
+      background: isDark ? "#020617" : "#ffffff",
+      color: isDark ? "#f8fafc" : "#111827",
+      fontWeight: 700,
+      outline: "none",
+    },
 
-const tableInputStyle: React.CSSProperties = {
-  width: "100%",
-  boxSizing: "border-box",
-  padding: "6px 8px",
-  borderRadius: 8,
-  border: "1px solid #d1d5db",
-};
+    primaryButton: {
+      width: "100%",
+      padding: "12px 14px",
+      borderRadius: 12,
+      border: "none",
+      background: "#2563eb",
+      color: "white",
+      fontWeight: 800,
+      cursor: "pointer",
+    },
+
+    emptyText: {
+      color: isDark ? "#94a3b8" : "#64748b",
+      fontSize: 13,
+      margin: 0,
+    },
+
+    table: {
+      width: "100%",
+      borderCollapse: "collapse",
+      fontSize: 13,
+      color: isDark ? "#e5e7eb" : "#111827",
+    },
+
+    th: {
+      textAlign: "left",
+      padding: "8px 6px",
+      borderBottom: `1px solid ${isDark ? "#334155" : "#cbd5e1"}`,
+      color: isDark ? "#93c5fd" : "#334155",
+      fontSize: 12,
+      textTransform: "uppercase",
+      letterSpacing: "0.04em",
+    },
+
+    td: {
+      padding: "6px",
+      borderBottom: `1px solid ${isDark ? "#1e293b" : "#e5e7eb"}`,
+      color: isDark ? "#e5e7eb" : "#111827",
+    },
+
+    tableInput: {
+      width: "100%",
+      boxSizing: "border-box",
+      padding: "6px 8px",
+      borderRadius: 8,
+      border: `1px solid ${isDark ? "#334155" : "#d1d5db"}`,
+      background: isDark ? "#020617" : "#ffffff",
+      color: isDark ? "#f8fafc" : "#111827",
+      fontWeight: 700,
+    },
+  };
+}
